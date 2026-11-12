@@ -2,9 +2,9 @@ import { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { ApiError } from "@event-tree/api-client";
-import { ErrorText, Field, PrimaryButton } from "../src/components/Field";
-import { api } from "../src/lib/api";
-import { tokens } from "../src/theme";
+import { ErrorText, Field, PrimaryButton } from "../../src/components/Field";
+import { api } from "../../src/lib/api";
+import { brand, tokens } from "../../src/theme";
 
 /** "2026-12-05 14:00" in the phone's time zone → ISO string. Empty or invalid → "" (the API explains). */
 function toIso(local: string): string {
@@ -14,7 +14,7 @@ function toIso(local: string): string {
   return new Date(y!, m! - 1, d!, h!, min!).toISOString();
 }
 
-/** Post an upcoming event from the phone. Plain text date fields keep the app free of native picker modules. */
+/** Add an event to your page from the phone. Plain text date fields keep the app free of native picker modules. */
 export default function NewEventScreen() {
   const [form, setForm] = useState({
     title: "",
@@ -34,7 +34,7 @@ export default function NewEventScreen() {
     setBusy(true);
     setError(null);
     try {
-      const event = await api.createEvent({
+      await api.createEvent({
         title: form.title,
         category: form.category,
         startsAt: toIso(form.startsAt),
@@ -44,9 +44,9 @@ export default function NewEventScreen() {
         coverImage: form.coverUrl.trim() ? { url: form.coverUrl.trim(), alt: `${form.title} poster` } : null,
         links: form.registerUrl.trim() ? [{ label: "Register", url: form.registerUrl.trim(), kind: "register", primary: true }] : [],
       });
-      router.replace(`/e/${event.slug}`);
+      router.back();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Could not post the event.");
+      setError(err instanceof ApiError ? err.message : "Couldn't add the event.");
     } finally {
       setBusy(false);
     }
@@ -57,7 +57,7 @@ export default function NewEventScreen() {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
           <Field label="Title" value={form.title} onChangeText={set("title")} maxLength={120} />
-          <Field label="Category" value={form.category} onChangeText={set("category")} placeholder="Tech, Career, Sports…" maxLength={40} />
+          <Field label="Category" value={form.category} onChangeText={set("category")} placeholder="Music, Talks, Sports…" maxLength={40} />
           <Field label="Starts (YYYY-MM-DD HH:MM)" value={form.startsAt} onChangeText={set("startsAt")} placeholder="2026-12-05 14:00" />
           <Field label="Ends (YYYY-MM-DD HH:MM)" value={form.endsAt} onChangeText={set("endsAt")} placeholder="2026-12-05 17:00" />
           <Field label="Venue" value={form.venue} onChangeText={set("venue")} maxLength={120} />
@@ -65,8 +65,8 @@ export default function NewEventScreen() {
           <Field label="Poster image link" value={form.coverUrl} onChangeText={set("coverUrl")} placeholder="https://…" keyboardType="url" autoCapitalize="none" />
           <Field label="Registration link" value={form.registerUrl} onChangeText={set("registerUrl")} placeholder="https://…" keyboardType="url" autoCapitalize="none" />
           <ErrorText>{error}</ErrorText>
-          <PrimaryButton title={busy ? "Posting…" : "Post event"} onPress={submit} disabled={busy} />
-          <Text style={styles.hint}>If the API has an ADMIN_KEY set, post from the web app, which can send the key.</Text>
+          <PrimaryButton title={busy ? "Adding…" : "Add event"} onPress={submit} disabled={busy} />
+          <Text style={styles.hint}>It goes to the top of your page. Reorder or hide it from Your events.</Text>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -75,6 +75,6 @@ export default function NewEventScreen() {
 
 const styles = StyleSheet.create({
   content: { padding: tokens.gutter, paddingBottom: 48 },
-  card: { backgroundColor: "#fff", borderRadius: tokens.radiusCard, padding: 20, gap: 14 },
+  card: { backgroundColor: "#fff", borderRadius: 24, borderWidth: 1, borderColor: brand.line, padding: 20, gap: 14 },
   hint: { color: tokens.inkMuted, fontSize: 12, textAlign: "center" },
 });
