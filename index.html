@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CUU Events: upcoming and past events at Cavendish University Uganda</title>
+<meta name="description" content="Upcoming and past events at Cavendish University Uganda, with every link in one place.">
+<meta name="theme-color" content="#0d1b3f">
+<meta property="og:title" content="CUU Events">
+<meta property="og:description" content="Upcoming and past events at Cavendish University Uganda, with every link in one place.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📅</text></svg>">
+<style>
+  :root{
+    --bg:#0d1b3f; --bg2:#182f6e;
+    --on-bg:#ffffff; --on-bg-muted:#b9c3e6;
+    --card:#fffaf0; --ink:#0d1b3f; --ink-muted:#5a648a; --line:rgba(13,27,63,.12);
+    --accent:#f5b62e; --live:#1fbf63;
+    --glass:rgba(255,255,255,.16);
+    --r-card:26px; --r-pill:22px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    min-height:100vh; color:var(--on-bg);
+    font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    background:linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%) fixed;
+    -webkit-font-smoothing:antialiased;
+  }
+  button{font:inherit;color:inherit;cursor:pointer}
+  a{color:inherit}
+  :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+  .wrap{max-width:580px;margin:0 auto;padding:84px 16px 48px}
+
+  /* ---------- floating corner buttons ---------- */
+  .corner{position:fixed;top:14px;z-index:5;width:44px;height:44px;border-radius:14px;border:0;
+    display:grid;place-items:center;background:var(--glass);color:var(--on-bg);
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:transform .15s}
+  .corner:hover{transform:scale(1.06)}
+  .corner svg{width:20px;height:20px}
+  .corner.left{left:max(14px,calc(50% - 290px + 14px))}
+  .corner.right{right:max(14px,calc(50% - 290px + 14px))}
+
+  /* ---------- profile ---------- */
+  .profile{text-align:center}
+  .avatar{width:112px;height:112px;border-radius:50%;margin:0 auto 16px;display:grid;place-items:center;
+    background:var(--accent);color:var(--ink);font-weight:800;font-size:30px;letter-spacing:.5px;overflow:hidden}
+  .avatar img{width:100%;height:100%;object-fit:cover}
+  .profile h1{font-size:24px;font-weight:800;margin:0;letter-spacing:-.2px}
+  .tagline{margin:6px auto 0;max-width:420px;font-size:15.5px;font-weight:500;color:var(--on-bg-muted)}
+  .socials{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin:18px 0 0}
+  .socials a{display:grid;place-items:center;width:32px;height:32px;transition:transform .15s}
+  .socials a:hover{transform:scale(1.12)}
+  .socials svg{width:28px;height:28px;fill:currentColor}
+  .badge-row{margin-top:16px}
+  .pillbadge{display:inline-flex;align-items:center;gap:6px;background:var(--glass);border-radius:10px;
+    padding:5px 10px;font-size:13.5px;font-weight:600}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+  .dot.live{background:var(--live)}
+
+  /* ---------- upcoming / past switch ---------- */
+  .switch{display:flex;width:min(300px,100%);margin:22px auto 0;padding:3px;border-radius:999px;background:rgba(255,255,255,.2)}
+  .switch button{flex:1;border:0;background:none;color:var(--on-bg);font-weight:700;font-size:15.5px;
+    padding:12px 0;border-radius:999px}
+  .switch button[aria-selected="true"]{background:#fff;color:var(--ink)}
+  .switch .count{font-weight:600;opacity:.65;margin-left:5px;font-size:13.5px}
+
+  /* ---------- search + category chips ---------- */
+  .search{display:block;width:100%;margin:22px 0 10px;padding:13px 18px;border-radius:999px;border:0;
+    background:var(--glass);color:var(--on-bg);font:inherit;outline-offset:2px}
+  .search::placeholder{color:var(--on-bg-muted)}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:none;border:0;background:var(--glass);font-size:13.5px;font-weight:600;padding:7px 13px;border-radius:999px}
+  .chip[aria-pressed="true"]{background:var(--accent);color:var(--ink)}
+
+  /* ---------- section header ---------- */
+  .head{text-align:center;font-weight:800;font-size:16px;margin:30px 0 14px}
+
+  /* ---------- featured carousel ---------- */
+  .carousel{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -16px;padding:2px 16px 8px;scrollbar-width:none}
+  .carousel::-webkit-scrollbar{display:none}
+  .feat{flex:none;width:min(80%,320px);scroll-snap-align:center;background:var(--card);color:var(--ink);
+    border-radius:var(--r-card);padding:10px;position:relative;box-shadow:0 8px 24px rgba(0,0,0,.22);transition:transform .15s}
+  .feat:only-child{width:100%}
+  .feat:hover{transform:translateY(-2px)}
+  .feat .art{position:relative;height:160px;border-radius:18px;display:grid;place-items:center;font-size:64px;overflow:hidden}
+  .feat .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .feat .when{position:absolute;left:10px;top:10px;background:#fff;color:var(--ink);border-radius:10px;
+    padding:4px 9px;font-size:12.5px;font-weight:800}
+  .feat .cd{position:absolute;left:10px;right:10px;bottom:10px;background:rgba(13,27,63,.86);color:#fff;border-radius:10px;
+    padding:6px 9px;font-size:13px;font-weight:700;text-align:center;font-variant-numeric:tabular-nums}
+  .feat .cd.live{background:var(--live);color:#04210f}
+  .feat .cap{display:flex;align-items:center;min-height:62px;padding:8px 36px 2px 40px;text-align:center}
+  .feat .cap a{flex:1;text-decoration:none;font-weight:700;font-size:15.5px;line-height:1.25}
+  .feat .cap a::after{content:"";position:absolute;inset:0;border-radius:var(--r-card)}
+  .feat .cap small{display:block;font-weight:500;color:var(--ink-muted);font-size:12.5px;margin-top:2px}
+  .more{position:absolute;right:6px;width:36px;height:36px;border:0;border-radius:50%;background:none;color:var(--ink-muted);
+    display:grid;place-items:center;z-index:1}
+  .more:hover{background:rgba(13,27,63,.08);color:var(--ink)}
+  .more svg{width:18px;height:18px}
+  .feat .more{bottom:20px}
+
+  /* ---------- event link buttons ---------- */
+  .event{background:var(--card);color:var(--ink);border-radius:var(--r-pill);margin-bottom:14px;position:relative;
+    box-shadow:0 4px 14px rgba(0,0,0,.16);transition:transform .15s}
+  .event:hover{transform:scale(1.015)}
+  .event[data-open="true"]{transform:none}
+  .event.target{outline:3px solid var(--accent);outline-offset:2px}
+  .row{display:grid;grid-template-columns:52px 1fr 52px;align-items:center;width:100%;min-height:68px;padding:8px;
+    background:none;border:0;border-radius:var(--r-pill);text-align:center}
+  .thumb{width:52px;height:52px;border-radius:14px;display:grid;place-content:center;line-height:1.05;background:var(--ink);color:#fff}
+  .thumb .m{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--accent)}
+  .thumb .d{font-size:20px;font-weight:800}
+  .past .thumb{background:#e6e0d2;color:var(--ink)}
+  .past .thumb .m{color:var(--ink-muted)}
+  .info{min-width:0;padding:0 8px}
+  .info .t{font-weight:700;font-size:15.5px;line-height:1.25}
+  .info .s{font-size:12.5px;color:var(--ink-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tag{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:2px;white-space:nowrap}
+  .tag.live{background:var(--live);color:#04210f}
+  .tag.soon{background:var(--accent);color:var(--ink)}
+  .tag.sample{border:1px dashed var(--ink-muted);color:var(--ink-muted)}
+  .event>.more{top:16px}
+  .details{display:none;padding:4px 16px 16px;text-align:center}
+  .event[data-open="true"] .details{display:block}
+  .details p{margin:4px 0 12px;font-size:14.5px}
+  .facts{font-size:13.5px;color:var(--ink-muted);display:grid;gap:4px;margin-bottom:14px}
+  .actions{display:grid;gap:8px}
+  .actions a,.actions button{display:block;text-decoration:none;text-align:center;border:1.5px solid var(--line);background:none;
+    color:var(--ink);font-size:14.5px;font-weight:700;padding:12px 14px;border-radius:999px}
+  .actions .primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .actions a:hover,.actions button:hover{border-color:var(--ink)}
+  .actions .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+  .empty{text-align:center;color:var(--on-bg-muted);padding:34px 12px;border:1.5px dashed rgba(255,255,255,.25);border-radius:var(--r-pill);margin-top:24px}
+
+  /* ---------- footer ---------- */
+  .cta{display:block;width:fit-content;margin:34px auto 0;background:#fff;color:var(--ink);text-decoration:none;font-weight:700;
+    padding:13px 22px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.2);transition:transform .15s}
+  .cta:hover{transform:scale(1.04)}
+  footer{text-align:center;color:var(--on-bg-muted);font-size:12.5px;margin-top:18px}
+
+  /* ---------- share sheet ---------- */
+  dialog{border:0;padding:0;background:var(--card);color:var(--ink);width:min(100%,460px);max-width:100%;max-height:88vh;
+    margin:auto auto 0;border-radius:24px 24px 0 0}
+  @media (min-width:600px){dialog{margin:auto;border-radius:24px}}
+  dialog::backdrop{background:rgba(5,10,28,.6)}
+  .sheet{padding:16px}
+  .sheet-top{display:grid;grid-template-columns:36px 1fr 36px;align-items:center;margin-bottom:12px}
+  .sheet-top h2{grid-column:2;text-align:center;font-size:16px;margin:0}
+  .sheet-top button{width:36px;height:36px;border:0;border-radius:50%;background:rgba(13,27,63,.07);font-size:18px;line-height:1}
+  .preview{background:var(--ink);color:#fff;border-radius:18px;padding:22px 16px;text-align:center;margin-bottom:10px}
+  .preview .e{font-size:40px;line-height:1}
+  .preview b{display:block;margin-top:8px;font-size:17px}
+  .preview span{display:block;color:var(--on-bg-muted);font-size:13.5px;margin-top:3px}
+  .sheet-list{display:grid}
+  .sheet-list a,.sheet-list button{display:flex;align-items:center;gap:12px;width:100%;padding:13px 8px;border:0;background:none;
+    color:var(--ink);text-decoration:none;font-weight:600;font-size:15px;text-align:left;border-radius:12px}
+  .sheet-list a:hover,.sheet-list button:hover{background:rgba(13,27,63,.06)}
+  .sheet-list i{font-style:normal;width:36px;height:36px;border-radius:10px;background:rgba(13,27,63,.07);display:grid;place-items:center;font-size:18px}
+  .sheet-list .go{margin-left:auto;color:var(--ink-muted)}
+
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);opacity:0;background:#fff;color:var(--ink);
+    padding:10px 16px;border-radius:999px;font-size:14px;font-weight:700;transition:.25s;pointer-events:none;z-index:99;
+    box-shadow:0 6px 18px rgba(0,0,0,.3)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  @media (prefers-reduced-motion: reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<button class="corner left" id="remind" type="button" aria-label="Get event reminders">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+</button>
+<button class="corner right" id="share-page" type="button" aria-label="Share this page">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="m8 7 4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>
+</button>
+
+<main class="wrap">
+  <header class="profile" id="profile"></header>
+
+  <div class="switch" role="tablist" aria-label="Event list">
+    <button role="tab" data-tab="upcoming" aria-selected="true">Upcoming<span class="count" id="c-up"></span></button>
+    <button role="tab" data-tab="past" aria-selected="false">Past<span class="count" id="c-past"></span></button>
+  </div>
+
+  <input class="search" id="search" type="search" placeholder="Search events, venues, clubs…" aria-label="Search events">
+  <div class="chips" id="chips" role="group" aria-label="Filter by category"></div>
+
+  <section id="featured"></section>
+  <section id="list"></section>
+
+  <a class="cta" id="submit-event" href="#" target="_blank" rel="noopener">Submit an event</a>
+  <footer>Events move from Upcoming to Past on their own</footer>
+</main>
+
+<dialog id="sheet" aria-labelledby="sheet-title"><div class="sheet" id="sheet-body"></div></dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="events.js"></script>
+<script>
+(() => {
+  const P = window.CUU_PROFILE || {};
+  const RAW = window.CUU_EVENTS || [];
+  const TZ = "Africa/Kampala";
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const safeUrl = u => /^(https?:|mailto:|tel:|#|\/|\.\/|[\w-]+\.(html|pdf))/i.test(u || "") ? u : "#";
+  const fmt = (d, o) => new Intl.DateTimeFormat("en-GB", { timeZone: TZ, ...o }).format(d);
+  const pageUrl = () => location.href.split("#")[0];
+
+  const events = RAW.map(e => {
+    const start = new Date(e.start);
+    const end = e.end ? new Date(e.end) : new Date(start.getTime() + 2 * 3600e3);
+    return { ...e, start, end };
+  }).filter(e => !isNaN(e.start));
+  const byId = id => events.find(e => e.id === id);
+  const status = e => { const n = Date.now(); return n < e.start ? "upcoming" : n <= e.end ? "live" : "past"; };
+  const upcoming = () => events.filter(e => status(e) !== "past").sort((a, b) => a.start - b.start);
+  const past = () => events.filter(e => status(e) === "past").sort((a, b) => b.start - a.start);
+
+  const state = { tab: "upcoming", cat: "All", q: "" };
+  const DOTS = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>';
+
+  /* ---------- profile ---------- */
+  const icons = {
+    instagram:'<path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 8.2A3.2 3.2 0 1 1 12 8.8a3.2 3.2 0 0 1 0 6.4zM17.3 5.5a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4zM12 2c-2.7 0-3 0-4.1.1C4.3 2.3 2.3 4.3 2.1 7.9 2 9 2 9.3 2 12s0 3 .1 4.1c.2 3.6 2.2 5.6 5.8 5.8 1.1.1 1.4.1 4.1.1s3 0 4.1-.1c3.6-.2 5.6-2.2 5.8-5.8.1-1.1.1-1.4.1-4.1s0-3-.1-4.1c-.2-3.6-2.2-5.6-5.8-5.8C15 2 14.7 2 12 2zm0 1.8c2.7 0 3 0 4 .1 2.7.1 4 1.4 4.1 4.1.1 1 .1 1.3.1 4s0 3-.1 4c-.1 2.7-1.4 4-4.1 4.1-1 .1-1.3.1-4 .1s-3 0-4-.1c-2.7-.1-4-1.4-4.1-4.1-.1-1-.1-1.3-.1-4s0-3 .1-4C3.9 5.3 5.3 4 8 3.9c1-.1 1.3-.1 4-.1z"/>',
+    x:'<path d="M17.8 3h3.1l-6.8 7.7L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.2-8.3L1.8 3h6.4l4.4 5.8L17.8 3zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5z"/>',
+    linkedin:'<path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9.5h4V21H3V9.5zm6.5 0h3.8v1.6h.1c.5-1 1.8-2 3.8-2 4 0 4.8 2.6 4.8 6V21h-4v-5.2c0-1.2 0-2.8-1.7-2.8s-2 1.3-2 2.7V21h-4V9.5z"/>',
+    whatsapp:'<path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1-.7-.3-1.4-.7-2-1.3-.6-.5-1-1.1-1.4-1.8-.1-.2 0-.4.1-.5l.4-.4.3-.5v-.5l-.8-1.9c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.6.6-.9 1.4-.9 2.2.1.9.4 1.8 1 2.6 1.1 1.6 2.5 2.9 4.2 3.7 1.8.7 1.8.5 2.2.4.6-.1 1.4-.6 1.6-1.1.2-.5.2-1 .1-1.1l-.4-.2z"/>',
+    youtube:'<path d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12a31 31 0 0 0 .5 4.8 3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-4.8 31 31 0 0 0-.5-4.8zM9.7 15V9l5.8 3-5.8 3z"/>',
+    website:'<path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm6.9 6h-3a15.7 15.7 0 0 0-1.4-3.6A8 8 0 0 1 18.9 8zM12 4c.8 1.2 1.5 2.5 1.9 4h-3.8c.4-1.5 1.1-2.8 1.9-4zM4.3 14a8 8 0 0 1 0-4h3.4a16.5 16.5 0 0 0 0 4H4.3zm.8 2h3c.3 1.3.8 2.5 1.4 3.6A8 8 0 0 1 5.1 16zm3-8h-3a8 8 0 0 1 4.4-3.6C8.9 5.5 8.4 6.7 8.1 8zM12 20c-.8-1.2-1.5-2.5-1.9-4h3.8c-.4 1.5-1.1 2.8-1.9 4zm2.3-6H9.7a14.7 14.7 0 0 1 0-4h4.6a14.7 14.7 0 0 1 0 4zm.3 5.6c.6-1.1 1.1-2.3 1.4-3.6h3a8 8 0 0 1-4.4 3.6zm1.7-5.6a16.5 16.5 0 0 0 0-4h3.4a8 8 0 0 1 0 4h-3.4z"/>'
+  };
+  function renderProfile() {
+    const up = upcoming(), live = up.filter(e => status(e) === "live").length;
+    const badge = live ? `<span class="dot live"></span>${live} happening now`
+      : up.length ? `<span class="dot"></span>${up.length} upcoming event${up.length > 1 ? "s" : ""}` : "";
+    $("#profile").innerHTML = `
+      <div class="avatar">${P.avatar ? `<img src="${esc(P.avatar)}" alt="">` : esc(P.avatarText || "CUU")}</div>
+      <h1>${esc(P.name || "CUU Events")}</h1>
+      <p class="tagline">${esc(P.tagline || "")}</p>
+      <div class="socials">${(P.socials || []).map(s =>
+        `<a href="${esc(safeUrl(s.url))}" target="_blank" rel="noopener" aria-label="${esc(s.type)}"><svg viewBox="0 0 24 24">${icons[s.type] || icons.website}</svg></a>`).join("")}</div>
+      ${badge ? `<div class="badge-row"><span class="pillbadge">${badge}</span></div>` : ""}`;
+  }
+  $("#submit-event").href = safeUrl(P.submitEventUrl);
+
+  /* ---------- calendar + share helpers ---------- */
+  const utc = d => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const gcal = e => "https://calendar.google.com/calendar/render?action=TEMPLATE" +
+    `&text=${encodeURIComponent(e.title)}&dates=${utc(e.start)}/${utc(e.end)}` +
+    `&details=${encodeURIComponent((e.description || "") + "\n\n" + pageUrl() + "#" + e.id)}` +
+    `&location=${encodeURIComponent(e.venue || "")}`;
+  const icsEsc = s => String(s || "").replace(/([,;\\])/g, "\\$1").replace(/\n/g, "\\n");
+  const icsBody = list => [
+    "BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//CUU Events//Link Tree//EN","CALSCALE:GREGORIAN",
+    ...list.flatMap(e => ["BEGIN:VEVENT", `UID:${e.id}@cuu-events`, `DTSTAMP:${utc(new Date())}`,
+      `DTSTART:${utc(e.start)}`, `DTEND:${utc(e.end)}`, `SUMMARY:${icsEsc(e.title)}`,
+      `LOCATION:${icsEsc(e.venue)}`, `DESCRIPTION:${icsEsc(e.description)}`, "END:VEVENT"]),
+    "END:VCALENDAR"].join("\r\n");
+  const download = (name, text) => {
+    const a = Object.assign(document.createElement("a"), {
+      href: URL.createObjectURL(new Blob([text], { type: "text/calendar" })), download: name });
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+  const toast = msg => { const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 1800); };
+
+  const whenLine = e => {
+    const sameDay = fmt(e.start, { dateStyle: "medium" }) === fmt(e.end, { dateStyle: "medium" });
+    return sameDay
+      ? `${fmt(e.start,{weekday:"short",day:"numeric",month:"short",year:"numeric"})}, ${fmt(e.start,{hour:"2-digit",minute:"2-digit"})}–${fmt(e.end,{hour:"2-digit",minute:"2-digit"})}`
+      : `${fmt(e.start,{day:"numeric",month:"short"})} – ${fmt(e.end,{day:"numeric",month:"short",year:"numeric"})}`;
+  };
+
+  /* ---------- share sheet ---------- */
+  const sheet = $("#sheet");
+  let sheetCtx = null;
+  function openSheet(title, preview, rows, ctx) {
+    sheetCtx = ctx;
+    $("#sheet-body").innerHTML = `
+      <div class="sheet-top"><h2 id="sheet-title">${esc(title)}</h2><button type="button" data-close aria-label="Close">×</button></div>
+      ${preview}
+      <div class="sheet-list">${rows.map(r => r.href
+        ? `<a href="${esc(r.href)}" target="_blank" rel="noopener"><i>${r.icon}</i>${esc(r.label)}<span class="go">›</span></a>`
+        : `<button type="button" data-act="${r.act}"><i>${r.icon}</i>${esc(r.label)}<span class="go">›</span></button>`).join("")}</div>`;
+    sheet.showModal();
+  }
+  function shareSheet(e) {
+    const url = pageUrl() + (e ? "#" + e.id : "");
+    const title = e ? e.title : (P.name || "CUU Events");
+    const text = e ? `${e.title} · ${fmt(e.start,{weekday:"short",day:"numeric",month:"short"})}${e.venue ? " · " + e.venue : ""}` : (P.tagline || title);
+    const u = encodeURIComponent(url), t = encodeURIComponent(text);
+    const rows = [
+      { icon: "🔗", label: "Copy link", act: "copy" },
+      { icon: "💬", label: "Share on WhatsApp", href: `https://wa.me/?text=${t}%20${u}` },
+      { icon: "𝕏", label: "Share on X", href: `https://twitter.com/intent/tweet?text=${t}&url=${u}` },
+      { icon: "📘", label: "Share on Facebook", href: `https://www.facebook.com/sharer/sharer.php?u=${u}` },
+      { icon: "✉️", label: "Share by email", href: `mailto:?subject=${encodeURIComponent(title)}&body=${t}%0A%0A${u}` }
+    ];
+    if (navigator.share) rows.push({ icon: "↗", label: "More options", act: "native" });
+    if (e && status(e) !== "past") rows.push(
+      { icon: "📅", label: "Add to Google Calendar", href: gcal(e) },
+      { icon: "⬇", label: "Download calendar file (.ics)", act: "ics" });
+    const preview = `<div class="preview"><div class="e">${esc(e ? e.emoji || "📌" : "📅")}</div><b>${esc(title)}</b><span>${esc(e ? whenLine(e) : (P.handle || ""))}</span></div>`;
+    openSheet(e ? "Share this event" : "Share this page", preview, rows, { e, url, title, text });
+  }
+  function remindSheet() {
+    const up = upcoming();
+    const preview = `<div class="preview"><div class="e">🔔</div><b>Never miss an event</b><span>${up.length ? `Put all ${up.length} upcoming event${up.length > 1 ? "s" : ""} in your phone or laptop calendar.` : "There are no upcoming events yet. Check back soon."}</span></div>`;
+    openSheet("Get reminders", preview, up.length ? [{ icon: "⬇", label: "Download calendar file (.ics)", act: "ics-all" }] : [], {});
+  }
+  sheet.addEventListener("click", async ev => {
+    if (ev.target === sheet || ev.target.closest("[data-close]")) return sheet.close();
+    const b = ev.target.closest("[data-act]"); if (!b) return;
+    const c = sheetCtx || {};
+    if (b.dataset.act === "copy") {
+      try { await navigator.clipboard.writeText(c.url); toast("Link copied"); } catch (_) { toast("Could not copy the link"); }
+    } else if (b.dataset.act === "native") {
+      try { await navigator.share({ title: c.title, text: c.text, url: c.url }); } catch (_) {}
+    } else if (b.dataset.act === "ics") {
+      download(c.e.id + ".ics", icsBody([c.e]));
+    } else if (b.dataset.act === "ics-all") {
+      const up = upcoming(); download("cuu-upcoming-events.ics", icsBody(up)); toast(`${up.length} events saved to the file`);
+    }
+    sheet.close();
+  });
+
+  /* ---------- featured carousel: live and next events ---------- */
+  const TINTS = ["#f5b62e", "#ff8a65", "#7cc6fe", "#9be28f", "#d5a8ff", "#ffc2d1"];
+  const tint = s => TINTS[[...String(s || "")].reduce((a, c) => a + c.charCodeAt(0), 0) % TINTS.length];
+  function countdownText(e) {
+    const ms = e.start - Date.now();
+    if (ms <= 0) return Date.now() <= e.end ? "Happening now" : "Finished";
+    const p = n => String(n).padStart(2, "0");
+    const d = Math.floor(ms / 864e5);
+    return `Starts in ${d ? d + "d " : ""}${p(Math.floor(ms / 36e5) % 24)}h ${p(Math.floor(ms / 6e4) % 60)}m ${p(Math.floor(ms / 1e3) % 60)}s`;
+  }
+  function renderFeatured() {
+    const f = $("#featured");
+    const filtering = state.q.trim() || state.cat !== "All";
+    const list = state.tab === "upcoming" && !filtering ? upcoming().slice(0, 3) : [];
+    if (!list.length) { f.innerHTML = ""; return; }
+    f.innerHTML = `<h2 class="head">Next up</h2><div class="carousel">${list.map(e => `
+      <article class="feat">
+        <div class="art" style="background:${tint(e.category || e.id)}">
+          ${e.image ? `<img src="${esc(e.image)}" alt="">` : `<span aria-hidden="true">${esc(e.emoji || "📌")}</span>`}
+          <span class="when">${fmt(e.start,{weekday:"short",day:"numeric",month:"short"})}</span>
+          <span class="cd" data-cd="${esc(e.id)}"></span>
+        </div>
+        <div class="cap"><a href="#${esc(e.id)}" data-jump="${esc(e.id)}">${esc(e.title)}<small>${esc(e.venue || "")}</small></a></div>
+        <button class="more" type="button" data-share="${esc(e.id)}" aria-label="Share ${esc(e.title)}">${DOTS}</button>
+      </article>`).join("")}</div>`;
+    tick();
+  }
+  function tick() {
+    document.querySelectorAll("[data-cd]").forEach(el => {
+      const e = byId(el.dataset.cd); if (!e) return;
+      el.textContent = countdownText(e);
+      el.classList.toggle("live", status(e) === "live");
+    });
+  }
+
+  /* ---------- event list ---------- */
+  const cats = ["All", ...new Set(events.map(e => e.category).filter(Boolean))];
+  $("#chips").innerHTML = cats.map(c => `<button class="chip" type="button" data-cat="${esc(c)}" aria-pressed="${c === "All"}">${esc(c)}</button>`).join("");
+
+  function card(e) {
+    const st = status(e);
+    const soon = st === "upcoming" && e.start - Date.now() < 7 * 864e5;
+    const tag = st === "live" ? '<span class="tag live">LIVE</span>' : soon ? '<span class="tag soon">This week</span>' : "";
+    const sample = e.sample ? '<span class="tag sample">sample</span>' : "";
+    const links = (e.links || []).map(l =>
+      `<a class="${l.primary ? "primary" : ""}" href="${esc(safeUrl(l.url))}" target="_blank" rel="noopener">${esc(l.label)}</a>`).join("");
+    const cal = st === "past" ? "" :
+      `<div class="two"><a href="${esc(gcal(e))}" target="_blank" rel="noopener">Google Calendar</a><button type="button" data-ics="${esc(e.id)}">Download .ics</button></div>`;
+    return `<article class="event ${st}" id="${esc(e.id)}" data-open="false">
+      <button class="row" type="button" aria-expanded="false" aria-controls="d-${esc(e.id)}">
+        <span class="thumb"><span class="m">${fmt(e.start,{month:"short"})}</span><span class="d">${fmt(e.start,{day:"numeric"})}</span></span>
+        <span class="info"><span class="t">${esc(e.emoji || "")} ${esc(e.title)}${tag}${sample}</span>
+          <span class="s" style="display:block">${esc([e.organizer, e.venue].filter(Boolean).join(" · "))}</span></span>
+        <span></span>
+      </button>
+      <button class="more" type="button" data-share="${esc(e.id)}" aria-label="Share ${esc(e.title)}">${DOTS}</button>
+      <div class="details" id="d-${esc(e.id)}">
+        ${e.description ? `<p>${esc(e.description)}</p>` : ""}
+        <div class="facts"><span>🗓 ${whenLine(e)}</span>${e.venue ? `<span>📍 ${esc(e.venue)}</span>` : ""}${e.category ? `<span>🏷 ${esc(e.category)}</span>` : ""}</div>
+        <div class="actions">${links}${cal}</div>
+      </div></article>`;
+  }
+
+  let signature = "";
+  function render() {
+    const q = state.q.trim().toLowerCase();
+    const match = e => (state.cat === "All" || e.category === state.cat) &&
+      (!q || [e.title, e.venue, e.organizer, e.category, e.description].join(" ").toLowerCase().includes(q));
+    const up = upcoming(), pa = past();
+    $("#c-up").textContent = up.length; $("#c-past").textContent = pa.length;
+    signature = events.map(status).join();
+
+    const shown = (state.tab === "past" ? pa : up).filter(match);
+    let html = "", month = "";
+    if (!shown.length) html = `<div class="empty">${state.tab === "past" ? "No past events match." : "No upcoming events match. Check back soon."}</div>`;
+    for (const e of shown) {
+      const m = fmt(e.start, { month: "long", year: "numeric" });
+      if (m !== month) { html += `<h2 class="head">${m}</h2>`; month = m; }
+      html += card(e);
+    }
+    $("#list").innerHTML = html;
+    renderProfile(); renderFeatured();
+  }
+
+  function setTab(t) {
+    state.tab = t;
+    document.querySelectorAll(".switch button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
+    render();
+  }
+  function openEvent(id, scroll) {
+    const e = byId(id); if (!e) return;
+    const want = status(e) === "past" ? "past" : "upcoming";
+    if (state.tab !== want) setTab(want);
+    let el = document.getElementById(id);
+    if (!el) { // hidden by a search or category filter: clear them
+      state.q = ""; state.cat = "All"; $("#search").value = "";
+      document.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.cat === "All"));
+      render(); el = document.getElementById(id); if (!el) return;
+    }
+    el.dataset.open = "true"; el.querySelector(".row").setAttribute("aria-expanded", "true");
+    if (scroll) {
+      el.classList.add("target"); setTimeout(() => el.classList.remove("target"), 2000);
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }
+
+  /* ---------- interactions ---------- */
+  document.addEventListener("click", ev => {
+    const t = ev.target.closest("button,a"); if (!t || sheet.contains(t)) return;
+    if (t.id === "share-page") return shareSheet(null);
+    if (t.id === "remind") return remindSheet();
+    if (t.dataset.tab) return setTab(t.dataset.tab);
+    if (t.dataset.cat) { state.cat = t.dataset.cat;
+      document.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c === t)); return render(); }
+    if (t.dataset.jump) { ev.preventDefault(); history.replaceState(null, "", "#" + t.dataset.jump); return openEvent(t.dataset.jump, true); }
+    if (t.dataset.share) return shareSheet(byId(t.dataset.share));
+    if (t.dataset.ics) { const e = byId(t.dataset.ics); return download(e.id + ".ics", icsBody([e])); }
+    if (t.classList.contains("row")) {
+      const card = t.closest(".event"); const open = card.dataset.open !== "true";
+      card.dataset.open = open; t.setAttribute("aria-expanded", open);
+      if (open) history.replaceState(null, "", "#" + card.id);
+    }
+  });
+  $("#search").addEventListener("input", e => { state.q = e.target.value; render(); });
+
+  render();
+  if (location.hash) openEvent(decodeURIComponent(location.hash.slice(1)), true);
+  // Countdown ticks every second. The lists are rebuilt only when an event starts or ends,
+  // which is what moves it to "Happening now" and then to Past.
+  setInterval(() => {
+    tick();
+    if (events.map(status).join() !== signature) {
+      const open = [...document.querySelectorAll('.event[data-open="true"]')].map(e => e.id);
+      render(); open.forEach(id => openEvent(id));
+    }
+  }, 1000);
+})();
+</script>
+</body>
+</html>
