@@ -9,6 +9,8 @@
    • Times use Kampala time (+03:00). Format: "2026-12-05T14:00:00+03:00"
    • When an event is over, add recap links (photos, slides,
      recording) to its `links` list and they show up under "Past".
+   • `image` is the poster shown on the event's card. Put the
+     file in the assets folder. Leave it out to show the emoji.
    • Every event below marked `sample: true` is PLACEHOLDER data.
      Delete or replace those before sharing the page.
    ============================================================ */
@@ -19,6 +21,7 @@ window.CUU_PROFILE = {
   tagline: "Every event at Cavendish University Uganda: what's coming up, what you missed, and every link in one place.",
   avatarText: "CUU",          // shown if no avatar image is set
   avatar: "",                 // e.g. "assets/logo.png"
+  hero: "assets/hero.jpg",    // big interactive artwork at the top; set to "" to show the round avatar instead
   submitEventUrl: "#",        // e.g. a Google Form for students to submit events
   socials: [
     { type: "instagram", url: "#" },
@@ -33,6 +36,7 @@ window.CUU_PROFILE = {
 window.CUU_EVENTS = [
   {
     id: "devfest-on-campus",
+    image: "assets/devfest-on-campus.jpg",
     sample: true,
     title: "DevFest on Campus",
     emoji: "🚀",
@@ -49,6 +53,7 @@ window.CUU_EVENTS = [
   },
   {
     id: "career-fair",
+    image: "assets/career-fair.jpg",
     sample: true,
     title: "End-of-Year Career Fair",
     emoji: "💼",
@@ -65,6 +70,7 @@ window.CUU_EVENTS = [
   },
   {
     id: "hackathon-48h",
+    image: "assets/hackathon-48h.jpg",
     sample: true,
     title: "48-Hour Campus Hackathon",
     emoji: "⚡",
@@ -82,6 +88,7 @@ window.CUU_EVENTS = [
   },
   {
     id: "christmas-carols",
+    image: "assets/christmas-carols.jpg",
     sample: true,
     title: "Carols & Culture Night",
     emoji: "🎄",
@@ -97,6 +104,7 @@ window.CUU_EVENTS = [
   },
   {
     id: "research-week",
+    image: "assets/research-week.jpg",
     sample: true,
     title: "Student Research Showcase",
     emoji: "🔬",
@@ -113,6 +121,7 @@ window.CUU_EVENTS = [
   },
   {
     id: "inter-faculty-games",
+    image: "assets/inter-faculty-games.jpg",
     sample: true,
     title: "Inter-Faculty Games",
     emoji: "⚽",
@@ -129,6 +138,7 @@ window.CUU_EVENTS = [
   },
   {
     id: "cloud-study-jam",
+    image: "assets/cloud-study-jam.jpg",
     sample: true,
     title: "Cloud Study Jam",
     emoji: "☁️",
@@ -145,6 +155,7 @@ window.CUU_EVENTS = [
   },
   {
     id: "orientation",
+    image: "assets/orientation.jpg",
     sample: true,
     title: "Freshers' Orientation Week",
     emoji: "🎓",

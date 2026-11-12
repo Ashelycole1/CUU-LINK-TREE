@@ -3,7 +3,8 @@
 A Linktree-style page for Cavendish University Uganda events. It shows what's coming up, keeps an archive of past events, and puts every link in one place.
 
 ## What it does
-- **Profile header.** Logo, name, tagline and social icons, laid out like a Linktree page, with a badge showing how many events are coming up.
+- **Interactive hero.** The artwork at the top leans toward the mouse (or tilts with the phone), and tapping it throws confetti and names the next event. Set `hero: ""` in `events.js` to show a round logo instead.
+- **Profile header.** Name, tagline and social icons, laid out like a Linktree page, with a badge showing how many events are coming up.
 - **Corner buttons.** The share button (top right) shares the whole page. The bell (top left) downloads one .ics file with every upcoming event.
 - **Upcoming / Past switch.** An event moves to Past by itself once its end time passes, so you never have to move it.
 - **"Next up" cards.** The next three events sit in a swipeable row, each with a live countdown. While an event is running its card says **Happening now**.
@@ -27,7 +28,7 @@ Edit **`events.js`** only. Copy an existing block and change its fields:
   end:   "2026-12-05T17:00:00+03:00",
   venue: "Main Hall",
   description: "One or two sentences.",
-  image: "assets/poster.jpg",             // optional: poster shown on the "Next up" card
+  image: "assets/poster.jpg",             // optional: poster on the card (about 928x522 works well)
   links: [
     { label: "Register", url: "https://...", primary: true },
     { label: "Agenda",   url: "https://..." }
@@ -38,6 +39,12 @@ Edit **`events.js`** only. Copy an existing block and change its fields:
 When an event is over, change its links to recap links (Photos, Slides, Recording) so they show up under **Past**.
 
 ⚠️ Every event marked `sample: true` is placeholder data with a "sample" tag. Replace those events before you share the page. Also fill in your real social links and `submitEventUrl` in `CUU_PROFILE`.
+
+## Files
+- `index.html`: the page and its behaviour.
+- `styles.css`: the look. Sizes and spacing follow measurements of a live Linktree profile; colours, font and artwork are CUU's own.
+- `events.js`: your profile and events. This is the only file you edit day to day.
+- `assets/`: the hero artwork and event posters (generated with Higgsfield).
 
 ## Preview and deploy
 - **Preview locally:** double-click `index.html`.
