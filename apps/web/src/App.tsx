@@ -1,19 +1,41 @@
 import { Route, Routes } from "react-router-dom";
-import { ThemeProvider } from "./components/ThemeProvider";
-import { EventPage } from "./pages/EventPage";
-import { NewEventPage } from "./pages/NewEventPage";
+import { RequireAuth } from "./auth/AuthContext";
+import { AdminLayout } from "./pages/admin/AdminLayout";
+import { AnalyticsAdmin } from "./pages/admin/AnalyticsAdmin";
+import { AppearanceAdmin } from "./pages/admin/AppearanceAdmin";
+import { EventsAdmin } from "./pages/admin/EventsAdmin";
+import { Login } from "./pages/auth/Login";
+import { Signup } from "./pages/auth/Signup";
+import { Landing } from "./pages/Landing";
 import { NotFoundPage } from "./pages/NotFoundPage";
-import { TreePage } from "./pages/TreePage";
+import { PublicEventPage } from "./pages/public/PublicEventPage";
+import { PublicPage } from "./pages/public/PublicPage";
 
+/**
+ * Marketing and auth pages, the host dashboard under /admin, and every
+ * host's public page at /:username (the Linktree URL shape).
+ */
 export function App() {
   return (
-    <ThemeProvider>
-      <Routes>
-        <Route path="/" element={<TreePage />} />
-        <Route path="/new" element={<NewEventPage />} />
-        <Route path="/e/:slug" element={<EventPage />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-    </ThemeProvider>
+    <Routes>
+      <Route path="/" element={<Landing />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+      <Route
+        path="/admin"
+        element={
+          <RequireAuth>
+            <AdminLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={<EventsAdmin />} />
+        <Route path="appearance" element={<AppearanceAdmin />} />
+        <Route path="analytics" element={<AnalyticsAdmin />} />
+      </Route>
+      <Route path="/:username" element={<PublicPage />} />
+      <Route path="/:username/:slug" element={<PublicEventPage />} />
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
   );
 }
