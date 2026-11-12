@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "Event Tree",
+    "slug": "event-tree",
+    "scheme": "eventtree",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#1d2c56",
+    "ios": { "supportsTablet": true, "bundleIdentifier": "app.eventtree.mobile" },
+    "android": { "package": "app.eventtree.mobile" },
+    "plugins": ["expo-router"],
+    "experiments": { "typedRoutes": false }
+  }
+}
