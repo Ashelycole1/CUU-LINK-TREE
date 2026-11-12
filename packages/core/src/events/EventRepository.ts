@@ -6,9 +6,10 @@ import type { Event } from "./Event";
  * swapped without touching business logic (dependency inversion).
  */
 export interface EventRepository {
-  findAll(): Promise<Event[]>;
   findById(id: string): Promise<Event | null>;
-  findBySlug(slug: string): Promise<Event | null>;
+  findByOwner(ownerId: string): Promise<Event[]>;
+  /** Slugs are unique per owner, so `/jazzfest/opening-night` and `/runclub/opening-night` can coexist. */
+  findBySlug(ownerId: string, slug: string): Promise<Event | null>;
   save(event: Event): Promise<void>;
   delete(id: string): Promise<void>;
 }

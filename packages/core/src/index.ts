@@ -2,7 +2,15 @@
 
 export * from "./dto";
 
-export { DomainError, ValidationError, BusinessRuleError, NotFoundError } from "./shared/errors";
+export {
+  DomainError,
+  ValidationError,
+  BusinessRuleError,
+  ConflictError,
+  NotFoundError,
+  UnauthorizedError,
+  ForbiddenError,
+} from "./shared/errors";
 export { Entity, ValueObject } from "./shared/Entity";
 export { Guard, slugify } from "./shared/guards";
 export {
@@ -26,10 +34,22 @@ export { RatingSummary } from "./reviews/RatingSummary";
 export type { ReviewRepository } from "./reviews/ReviewRepository";
 export { ReviewService } from "./reviews/ReviewService";
 
-export { Profile, DEFAULT_THEME, type ProfileRepository } from "./profile/Profile";
+export { Profile, type ProfileRepository } from "./profile/Profile";
+export { ProfileService } from "./profile/ProfileService";
+export { THEME_PRESETS, DEFAULT_THEME_ID, findTheme } from "./profile/themes";
+
+export { Username } from "./users/Username";
+export { User, type UserRepository, type PasswordHasher, type TokenService } from "./users/User";
+export { AuthService } from "./users/AuthService";
+
+export { AnalyticsService, type AnalyticsRepository } from "./analytics/AnalyticsService";
 
 export {
   InMemoryEventRepository,
   InMemoryReviewRepository,
   InMemoryProfileRepository,
+  InMemoryUserRepository,
+  InMemoryAnalyticsRepository,
+  PlainTextPasswordHasher,
+  FakeTokenService,
 } from "./infrastructure/InMemory";

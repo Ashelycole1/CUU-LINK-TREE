@@ -29,9 +29,12 @@ export interface EventLinkDTO {
   primary: boolean;
 }
 
+/* ---------- events ---------- */
+
 /** What is persisted for an event. */
 export interface EventRecord {
   id: string;
+  ownerId: string;
   slug: string;
   title: string;
   description: string;
@@ -45,6 +48,8 @@ export interface EventRecord {
   gallery: ImageLinkDTO[];
   links: EventLinkDTO[];
   position: number;
+  /** Hidden events stay in the dashboard but are not shown on the public page (Linktree's on/off switch). */
+  hidden: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -63,6 +68,8 @@ export interface EventDTO extends EventRecord {
   rating: RatingSummaryDTO;
 }
 
+/* ---------- reviews ---------- */
+
 export interface ReviewRecord {
   id: string;
   eventId: string;
@@ -74,12 +81,16 @@ export interface ReviewRecord {
 
 export type ReviewDTO = ReviewRecord;
 
+/* ---------- profile & appearance ---------- */
+
+export type SocialPlatform = "instagram" | "x" | "linkedin" | "whatsapp" | "youtube" | "tiktok" | "facebook" | "website";
+
 export interface SocialLinkDTO {
-  platform: "instagram" | "x" | "linkedin" | "whatsapp" | "youtube" | "tiktok" | "facebook" | "website";
+  platform: SocialPlatform;
   url: string;
 }
 
-export interface ThemeDTO {
+export interface ThemeColors {
   background: string;
   text: string;
   card: string;
@@ -87,15 +98,109 @@ export interface ThemeDTO {
   accent: string;
 }
 
-export interface ProfileDTO {
+/** ticket = notched stub (the house style), pill, outline, shadow = hard offset shadow. */
+export type ButtonStyle = "ticket" | "pill" | "outline" | "shadow";
+export type FontChoice = "bricolage" | "figtree" | "fraunces";
+
+export interface AppearanceDTO {
+  themeId: string;
+  colors: ThemeColors;
+  buttonStyle: ButtonStyle;
+  font: FontChoice;
+}
+
+export interface ThemePreset {
+  id: string;
   name: string;
-  handle: string;
+  colors: ThemeColors;
+  buttonStyle: ButtonStyle;
+  font: FontChoice;
+}
+
+/** A host's public page settings. One per user, addressed by username. */
+export interface ProfileDTO {
+  ownerId: string;
+  username: string;
+  displayName: string;
   bio: string;
   avatarUrl: string;
-  avatarText: string;
   heroImageUrl: string;
   socials: SocialLinkDTO[];
-  theme: ThemeDTO;
+  appearance: AppearanceDTO;
+}
+
+export type UpdateProfileInput = Partial<Pick<ProfileDTO, "displayName" | "bio" | "avatarUrl" | "heroImageUrl" | "socials">> & {
+  appearance?: Partial<Omit<AppearanceDTO, "colors">> & { colors?: Partial<ThemeColors> };
+};
+
+/** Everything the public page needs in one call. */
+export interface TreeDTO {
+  profile: ProfileDTO;
+  upcoming: EventDTO[];
+  past: EventDTO[];
+  categories: string[];
+}
+
+/* ---------- users & auth ---------- */
+
+export interface UserRecord {
+  id: string;
+  email: string;
+  username: string;
+  passwordHash: string;
+  createdAt: string;
+}
+
+export interface UserDTO {
+  id: string;
+  email: string;
+  username: string;
+  createdAt: string;
+}
+
+export interface SignupInput {
+  email: string;
+  username: string;
+  password: string;
+  displayName?: string;
+}
+
+export interface LoginInput {
+  email: string;
+  password: string;
+}
+
+export interface AuthSessionDTO {
+  token: string;
+  user: UserDTO;
+}
+
+/* ---------- analytics ---------- */
+
+export type AnalyticsType = "view" | "click";
+
+export interface AnalyticsRecord {
+  id: string;
+  ownerId: string;
+  type: AnalyticsType;
+  eventId: string | null;
+  at: string;
+}
+
+export interface AnalyticsDayDTO {
+  date: string;
+  views: number;
+  clicks: number;
+}
+
+export interface AnalyticsSummaryDTO {
+  days: number;
+  views: number;
+  clicks: number;
+  /** clicks / views, 0–1. */
+  clickRate: number;
+  series: AnalyticsDayDTO[];
+  topEvents: { eventId: string; title: string; clicks: number }[];
 }
 
 /* ---------- inputs ---------- */
@@ -112,6 +217,7 @@ export interface CreateEventInput {
   coverImage?: { url: string; alt?: string; caption?: string } | null;
   gallery?: { url: string; alt?: string; caption?: string }[];
   links?: { label: string; url: string; kind?: EventLinkKind; primary?: boolean }[];
+  hidden?: boolean;
 }
 
 export type UpdateEventInput = Partial<CreateEventInput>;

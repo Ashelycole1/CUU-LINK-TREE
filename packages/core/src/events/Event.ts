@@ -6,6 +6,7 @@ import { EventLink } from "./EventLink";
 import { ImageLink } from "./ImageLink";
 
 interface EventState {
+  ownerId: string;
   slug: string;
   title: string;
   description: string;
@@ -19,6 +20,7 @@ interface EventState {
   gallery: ImageLink[];
   links: EventLink[];
   position: number;
+  hidden: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -44,10 +46,14 @@ export class Event extends Entity {
 
   /* ---------- construction ---------- */
 
-  static create(input: CreateEventInput, ctx: { id: string; slug: string; now: Date; position?: number }): Event {
+  static create(
+    input: CreateEventInput,
+    ctx: { id: string; ownerId: string; slug: string; now: Date; position?: number },
+  ): Event {
     const fields = Event.validate(input);
     return new Event(ctx.id, {
       ...fields,
+      ownerId: ctx.ownerId,
       slug: ctx.slug,
       position: ctx.position ?? 0,
       createdAt: ctx.now,
@@ -60,6 +66,7 @@ export class Event extends Entity {
     const fields = Event.validate(record);
     return new Event(record.id, {
       ...fields,
+      ownerId: Guard.text(record.ownerId, "ownerId", { min: 1, max: 64 }),
       slug: record.slug,
       position: record.position ?? 0,
       createdAt: Guard.date(record.createdAt, "createdAt"),
@@ -90,11 +97,21 @@ export class Event extends Entity {
       coverImage: input.coverImage ? ImageLink.create(input.coverImage) : null,
       gallery,
       links,
+      hidden: input.hidden === true,
     };
   }
 
   /* ---------- read model ---------- */
 
+  get ownerId(): string {
+    return this.state.ownerId;
+  }
+  get hidden(): boolean {
+    return this.state.hidden;
+  }
+  isOwnedBy(userId: string): boolean {
+    return this.state.ownerId === userId;
+  }
   get slug(): string {
     return this.state.slug;
   }
@@ -170,6 +187,7 @@ export class Event extends Entity {
     const s = this.state;
     return {
       id: this.id,
+      ownerId: s.ownerId,
       slug: s.slug,
       title: s.title,
       description: s.description,
@@ -183,6 +201,7 @@ export class Event extends Entity {
       gallery: s.gallery.map((img) => img.toDTO()),
       links: s.links.map((link) => link.toDTO()),
       position: s.position,
+      hidden: s.hidden,
       createdAt: s.createdAt.toISOString(),
       updatedAt: s.updatedAt.toISOString(),
     };

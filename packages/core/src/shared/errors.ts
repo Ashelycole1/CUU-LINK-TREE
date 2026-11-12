@@ -32,10 +32,40 @@ export class BusinessRuleError extends DomainError {
   }
 }
 
+/** Something unique is already taken (username, email). */
+export class ConflictError extends DomainError {
+  readonly code = "CONFLICT";
+
+  constructor(
+    message: string,
+    readonly field?: string,
+  ) {
+    super(message);
+  }
+}
+
 export class NotFoundError extends DomainError {
   readonly code = "NOT_FOUND";
 
   constructor(entity: string, id: string) {
     super(`${entity} "${id}" was not found.`);
+  }
+}
+
+/** No valid session. */
+export class UnauthorizedError extends DomainError {
+  readonly code = "UNAUTHORIZED";
+
+  constructor(message = "Log in to continue.") {
+    super(message);
+  }
+}
+
+/** Logged in, but this belongs to someone else. */
+export class ForbiddenError extends DomainError {
+  readonly code = "FORBIDDEN";
+
+  constructor(message = "You can only change your own events.") {
+    super(message);
   }
 }
