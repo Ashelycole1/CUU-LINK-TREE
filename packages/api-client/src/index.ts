@@ -31,6 +31,6 @@ export type {
   RatingSummaryDTO,
   ReviewDTO,
   SocialLinkDTO,
-  ThemeDTO,
+  SocialPlatform,
   UpdateEventInput,
 } from "@event-tree/core";
