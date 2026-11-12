@@ -16,7 +16,7 @@ const tabStore = new SessionStore<Tab>("event-tree:tab", "upcoming");
 /** The tree itself: profile header, Next up row, Upcoming/Past switch, filters and the event buttons. */
 export function TreePage() {
   const profile = useProfile();
-  const [tab, setTab] = useState<Tab>(tabStore.get);
+  const [tab, setTab] = useState<Tab>(() => tabStore.get());
   const [category, setCategory] = useState("");
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
