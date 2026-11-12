@@ -5,15 +5,16 @@ import { Gallery } from "../../src/components/Gallery";
 import { ReviewSection } from "../../src/components/ReviewSection";
 import { api } from "../../src/lib/api";
 import { useResource } from "../../src/lib/useResource";
-import { tokens, useTheme } from "../../src/theme";
+import { DEFAULT_THEME, ThemeContext, tokens } from "../../src/theme";
 
 const STATUS_LABEL = { upcoming: "Upcoming", live: "Happening now", past: "Past event" } as const;
 
 /** One event: cover, details, link buttons, photos and reviews. */
 export default function EventScreen() {
-  const theme = useTheme();
-  const { slug = "" } = useLocalSearchParams<{ slug: string }>();
-  const event = useResource(() => api.getEvent(slug), [slug]);
+  const { username = "", slug = "" } = useLocalSearchParams<{ username: string; slug: string }>();
+  const page = useResource(() => api.getPage(username), [username]);
+  const event = useResource(() => api.getPageEvent(username, slug), [username, slug]);
+  const theme = page.data?.profile.appearance.colors ?? DEFAULT_THEME;
   const e = event.data;
 
   if (!e) {
@@ -27,9 +28,12 @@ export default function EventScreen() {
   const links = [...e.links].sort((a, b) => Number(b.primary) - Number(a.primary));
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <ThemeContext.Provider value={theme}>
+    <ScrollView contentContainerStyle={styles.content} style={{ backgroundColor: theme.background }}>
       <Stack.Screen
         options={{
+          headerStyle: { backgroundColor: theme.background },
+          headerTintColor: theme.text,
           headerRight: () => (
             <Pressable onPress={() => Share.share({ message: `${e.title}: ${Format.dateRange(e.startsAt, e.endsAt)}` })} accessibilityLabel="Share this event" hitSlop={10}>
               <Text style={{ color: theme.text, fontSize: 20 }}>↗</Text>
@@ -46,10 +50,10 @@ export default function EventScreen() {
       </View>
 
       <Text style={[styles.status, e.status === "live" && { backgroundColor: tokens.live }]}>{STATUS_LABEL[e.status]}</Text>
-      <Text style={styles.title}>{e.title}</Text>
+      <Text style={[styles.title, { color: theme.text }]}>{e.title}</Text>
       <Text style={styles.when}>{Format.dateRange(e.startsAt, e.endsAt)}</Text>
       <Text style={styles.muted}>{[e.venue, e.organizer, e.category].filter(Boolean).join(" · ")}</Text>
-      {e.status === "upcoming" && <Text style={[styles.countdown, { color: theme.accent }]}>{Format.countdown(e)}</Text>}
+      {e.status === "upcoming" && <Text style={[styles.countdown, { color: theme.text }]}>{Format.countdown(e)}</Text>}
       {!!e.description && <Text style={styles.description}>{e.description}</Text>}
 
       <View style={{ gap: 12, marginTop: 20 }}>
@@ -73,6 +77,7 @@ export default function EventScreen() {
       <Text style={styles.head}>Reviews</Text>
       <ReviewSection event={e} onChanged={event.reload} />
     </ScrollView>
+    </ThemeContext.Provider>
   );
 }
 
