@@ -1,10 +1,10 @@
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
-import { Link } from "expo-router";
+import { router } from "expo-router";
 import { Format, type EventDTO } from "@event-tree/api-client";
 import { tokens, useTheme } from "../theme";
 
 /** One event as a Linktree-style button: thumbnail, title, meta line, date chip. */
-export function EventRow({ event }: { event: EventDTO }) {
+export function EventRow({ event, username, onOpen }: { event: EventDTO; username: string; onOpen?: (e: EventDTO) => void }) {
   const theme = useTheme();
   const { day, month } = Format.dayMonth(event.startsAt);
   const meta =
@@ -15,8 +15,11 @@ export function EventRow({ event }: { event: EventDTO }) {
         : event.venue || event.category;
 
   return (
-    <Link href={`/e/${event.slug}`} asChild>
       <Pressable
+        onPress={() => {
+          onOpen?.(event);
+          router.push(`/${username}/${event.slug}`);
+        }}
         style={({ pressed }) => [styles.row, { backgroundColor: theme.card, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
         accessibilityRole="link"
         accessibilityLabel={`${event.title}, ${new Date(event.startsAt).toDateString()}`}
@@ -41,7 +44,6 @@ export function EventRow({ event }: { event: EventDTO }) {
           <Text style={styles.month}>{month}</Text>
         </View>
       </Pressable>
-    </Link>
   );
 }
 

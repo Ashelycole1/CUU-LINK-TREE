@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
-import { Link } from "expo-router";
+import { router } from "expo-router";
 import { Format, type EventDTO } from "@event-tree/api-client";
 import { tokens, useTheme } from "../theme";
 
 /** 264px card for the horizontal "Next up" row, with a ticking countdown. */
-export function NextUpCard({ event }: { event: EventDTO }) {
+export function NextUpCard({ event, username, onOpen }: { event: EventDTO; username: string; onOpen?: (e: EventDTO) => void }) {
   const theme = useTheme();
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -15,8 +15,10 @@ export function NextUpCard({ event }: { event: EventDTO }) {
   const countdown = Format.countdown(event, now);
 
   return (
-    <Link href={`/e/${event.slug}`} asChild>
-      <Pressable style={[styles.card, { backgroundColor: theme.card }]} accessibilityRole="link">
+      <Pressable onPress={() => {
+          onOpen?.(event);
+          router.push(`/${username}/${event.slug}`);
+        }} style={[styles.card, { backgroundColor: theme.card }]} accessibilityRole="link">
         <View style={styles.image}>
           {event.coverImage ? (
             <Image source={{ uri: event.coverImage.url }} style={StyleSheet.absoluteFill} resizeMode="cover" />
@@ -29,7 +31,6 @@ export function NextUpCard({ event }: { event: EventDTO }) {
         </Text>
         <Text style={[styles.countdown, countdown === "Happening now" && { color: tokens.live }]}>{countdown}</Text>
       </Pressable>
-    </Link>
   );
 }
 

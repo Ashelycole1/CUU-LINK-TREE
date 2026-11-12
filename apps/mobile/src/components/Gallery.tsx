@@ -19,7 +19,7 @@ export function Gallery({ event, onUpdated }: Props) {
   async function add() {
     setError(null);
     try {
-      onUpdated(await api.addImage(event.slug, { url }));
+      onUpdated(await api.addImage(event.id, { url }));
       setUrl("");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not add that image.");

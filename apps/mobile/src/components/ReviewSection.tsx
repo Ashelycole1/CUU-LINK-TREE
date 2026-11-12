@@ -14,7 +14,7 @@ interface Props {
 /** Rating summary, the review form and the list of reviews for one event. */
 export function ReviewSection({ event, onChanged }: Props) {
   const theme = useTheme();
-  const reviews = useResource(() => api.listReviews(event.slug), [event.slug]);
+  const reviews = useResource(() => api.listReviews(event.id), [event.id]);
   const [name, setName] = useState("");
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -30,7 +30,7 @@ export function ReviewSection({ event, onChanged }: Props) {
     setBusy(true);
     setError(null);
     try {
-      const review = await api.addReview(event.slug, { authorName: name, rating, comment });
+      const review = await api.addReview(event.id, { authorName: name, rating, comment });
       reviews.set([review, ...(reviews.data ?? [])]);
       setName("");
       setRating(0);
