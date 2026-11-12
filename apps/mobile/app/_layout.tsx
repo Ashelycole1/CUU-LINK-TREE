@@ -1,32 +1,35 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { api } from "../src/lib/api";
-import { useResource } from "../src/lib/useResource";
-import { DEFAULT_THEME, ThemeContext } from "../src/theme";
+import { AuthProvider } from "../src/auth/AuthContext";
+import { brand } from "../src/theme";
 
-/** Root layout: loads the profile theme once and shares it with every screen. */
+/**
+ * Root layout. Home, log-in and dashboard screens use Event Tree's own
+ * colours; each host page sets its own header colours from its theme.
+ */
 export default function RootLayout() {
-  const profile = useResource(() => api.getProfile(), []);
-  const theme = profile.data?.theme ?? DEFAULT_THEME;
-
   return (
     <SafeAreaProvider>
-      <ThemeContext.Provider value={theme}>
-        <StatusBar style="light" />
+      <AuthProvider>
+        <StatusBar style="auto" />
         <Stack
           screenOptions={{
-            headerStyle: { backgroundColor: theme.background },
-            headerTintColor: theme.text,
+            headerStyle: { backgroundColor: brand.paper },
+            headerTintColor: brand.plum,
             headerShadowVisible: false,
-            contentStyle: { backgroundColor: theme.background },
+            headerTitleStyle: { fontWeight: "800" },
+            contentStyle: { backgroundColor: brand.paper },
           }}
         >
           <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="e/[slug]" options={{ title: "" }} />
-          <Stack.Screen name="new" options={{ title: "Post an event", presentation: "modal" }} />
+          <Stack.Screen name="login" options={{ title: "Log in", presentation: "modal" }} />
+          <Stack.Screen name="dashboard/index" options={{ title: "Your events" }} />
+          <Stack.Screen name="dashboard/new" options={{ title: "Add event", presentation: "modal" }} />
+          <Stack.Screen name="[username]/index" options={{ headerShown: false }} />
+          <Stack.Screen name="[username]/[slug]" options={{ title: "" }} />
         </Stack>
-      </ThemeContext.Provider>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }
