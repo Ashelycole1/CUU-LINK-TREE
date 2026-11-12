@@ -1,0 +1,77 @@
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 16px/1.5 var(--body);
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; display: block; }
+a { color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.08; letter-spacing: -0.02em; margin: 0; }
+:focus-visible { outline: none; box-shadow: var(--focus); border-radius: 6px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.muted { color: var(--ink-2); }
+.center { text-align: center; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}
+
+/* ---------- logo ---------- */
+.logo { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: var(--plum); font: 800 21px/1 var(--display); letter-spacing: -0.03em; }
+.logo svg { color: var(--pink); }
+.logo.inverted { color: var(--paper); --logo-cut: var(--plum); }
+
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 48px; padding: 0 22px; border: 2px solid transparent; border-radius: var(--r-pill);
+  font-weight: 700; font-size: 15px; text-decoration: none; white-space: nowrap;
+  transition: transform 0.12s ease, background-color 0.12s ease;
+}
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.5; }
+.btn-dark { background: var(--plum); color: var(--paper); }
+.btn-dark:hover:not(:disabled) { background: var(--plum-2); }
+.btn-primary { background: var(--blue); color: var(--white); }
+.btn-pink { background: var(--pink); color: var(--plum); }
+.btn-pink:hover { background: #ff5a92; }
+.btn-ghost { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+.btn-ghost:hover:not(:disabled) { border-color: var(--ink); }
+.btn-light { background: var(--white); color: var(--ink); border-color: var(--line); }
+.btn-danger { background: var(--danger); color: var(--white); }
+.btn-small { min-height: 36px; padding: 0 14px; font-size: 14px; }
+.btn-block { width: 100%; }
+.text-btn { background: none; border: 0; padding: 4px 0; color: var(--blue-deep); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.icon-btn {
+  display: inline-grid; place-items: center; width: 36px; height: 36px; flex: none;
+  border: 0; border-radius: var(--r-sm); background: transparent; color: var(--ink-2); font-size: 15px;
+}
+.icon-btn:hover:not(:disabled) { background: var(--paper-2); color: var(--ink); }
+.icon-btn:disabled { opacity: 0.25; }
+.icon-btn.danger:hover { background: #fde4e9; color: var(--danger); }
+
+/* ---------- shared form controls (dashboard + auth) ---------- */
+.auth-form label, .editor label, .appearance-admin label {
+  display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px; min-width: 0;
+}
+.auth-form input, .editor input, .editor select, .editor textarea, .appearance-admin input:not([type="color"]), .appearance-admin textarea {
+  width: 100%; min-height: 46px; padding: 10px 14px;
+  border: 1.5px solid var(--line-strong); border-radius: var(--r-sm); background: var(--white);
+  font-weight: 400; font-size: 15px;
+}
+textarea { resize: vertical; }
+.auth-form input:focus, .editor :is(input, select, textarea):focus, .appearance-admin :is(input, textarea):focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px #3a5cff33; }
+.form-error { color: var(--danger); font-weight: 600; margin: 0; }
+.hint, label small { font-weight: 400; color: var(--ink-3); font-size: 13px; }
+
+/* ---------- not-found / loading ---------- */
+.plain-page { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 32px 16px; text-align: center; }
+.plain-page h1 { font-size: clamp(40px, 9vw, 72px); margin-top: 24px; }
+.plain-page p { margin: 0; color: var(--ink-2); max-width: 36ch; }
+.plain-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 16px; }
+.loading-note { padding: 64px 16px; text-align: center; color: var(--ink-2); }

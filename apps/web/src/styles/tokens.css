@@ -1,0 +1,34 @@
+/* Event Tree brand tokens. The public page uses its own --t-* variables
+   (set per host from their appearance); everything else uses these. */
+:root {
+  --plum: #2a0f3d;
+  --plum-2: #3d1a55;
+  --blue: #3a5cff;
+  --blue-deep: #2440d6;
+  --pink: #ff3d7f;
+  --sun: #ffc928;
+  --paper: #fffaf2;
+  --paper-2: #f6eee1;
+  --white: #ffffff;
+
+  --ink: var(--plum);
+  --ink-2: #5d4a6c;
+  --ink-3: #8a7a96;
+  --line: #e6dccd;
+  --line-strong: #cfc2b0;
+  --danger: #c4243f;
+  --ok: #19794a;
+
+  /* Chart series, checked with the dataviz validator against the paper surface. */
+  --c-views: #3a5cff;
+  --c-clicks: #e8306f;
+
+  --display: "Bricolage Grotesque", "Figtree", system-ui, sans-serif;
+  --body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 24px;
+  --r-pill: 999px;
+  --focus: 0 0 0 3px var(--paper), 0 0 0 5px var(--blue);
+}
