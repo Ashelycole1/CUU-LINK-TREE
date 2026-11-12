@@ -178,8 +178,8 @@ img { max-width: 100%; }
 .form legend { font-size: 14px; font-weight: 600; padding: 0 4px; }
 .form .chip { background: #eef0f5; color: var(--ink); align-self: flex-start; }
 .form .error { color: #c62828; }
-.row { display: flex; gap: 10px; }
-.row .grow { flex: 1; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.row .grow { flex: 1 1 150px; min-width: 0; }
 .row .narrow { width: 84px; }
 .link-row input:first-child { width: 30%; }
 .link-row select { width: auto; }
@@ -189,7 +189,9 @@ button.primary:disabled { opacity: 0.6; }
 .inline-form { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
 .inline-form input { flex: 1 1 160px; }
 .inline-form button.primary { padding: 0 18px; }
-.star-input { border: 0; padding: 0; display: flex; gap: 4px; }
+/* .form .star-input beats the generic ".form fieldset" column/border rule. */
+.form .star-input { border: 0; padding: 0; display: flex; flex-direction: row; flex-wrap: wrap; gap: 4px; }
+.form .star-input label { flex-direction: row; }
 .star-input legend { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
 .star-input label { cursor: pointer; font-size: 30px; color: #d0d3db; line-height: 1; }
 .star-input label.on { color: var(--accent); }
