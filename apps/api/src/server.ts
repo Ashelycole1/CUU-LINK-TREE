@@ -9,5 +9,5 @@ const app = createApp(Container.fromConfig(config), config);
 
 app.listen(config.port, () => {
   console.log(`Event Tree API on http://localhost:${config.port}${API_PREFIX}`);
-  console.log(config.adminKey ? "Write routes need the x-admin-key header." : "ADMIN_KEY is not set: write routes are open.");
+  if (config.usingDevSecret) console.warn("AUTH_SECRET is not set: using a development secret. Set it before deploying.");
 });

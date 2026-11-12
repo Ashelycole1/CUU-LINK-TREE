@@ -1,59 +1,45 @@
-import type { Request, RequestHandler, Response, Router } from "express";
-import type { EventListQuery, EventService } from "@event-tree/core";
+import type { Request, Response, Router } from "express";
+import type { AnalyticsService, EventService, ReviewService } from "@event-tree/core";
 import { Controller } from "../Controller";
 
-/** /events: list, read, post, edit and delete events, and add gallery images. */
+/** /events/:id: what any visitor can do with a visible event: reviews, photos, click tracking. */
 export class EventController extends Controller {
-  readonly basePath = "/events";
+  readonly basePath = "/events/:id";
 
   constructor(
     private readonly events: EventService,
-    private readonly requireAdmin: RequestHandler,
+    private readonly reviews: ReviewService,
+    private readonly analytics: AnalyticsService,
   ) {
     super();
   }
 
   protected register(router: Router): void {
-    router.get("/", this.handle(this.list));
-    router.get("/:id", this.handle(this.show));
-    router.post("/", this.requireAdmin, this.handle(this.create));
-    router.patch("/:id", this.requireAdmin, this.handle(this.update));
-    router.delete("/:id", this.requireAdmin, this.handle(this.destroy));
-    router.post("/:id/images", this.handle(this.addImage));
+    router.get("/reviews", this.handle(this.listReviews));
+    router.get("/reviews/summary", this.handle(this.summary));
+    router.post("/reviews", this.handle(this.addReview));
+    router.post("/images", this.handle(this.addImage));
+    router.post("/clicks", this.handle(this.click));
   }
 
-  private async list(req: Request, res: Response) {
-    const q = req.query;
-    const when = ["upcoming", "past", "all"].includes(String(q.when)) ? (String(q.when) as EventListQuery["when"]) : "all";
-    res.json(
-      await this.events.list({
-        when,
-        category: typeof q.category === "string" ? q.category : undefined,
-        q: typeof q.q === "string" ? q.q : undefined,
-        limit: q.limit ? Number(q.limit) : undefined,
-      }),
-    );
+  private async listReviews(req: Request, res: Response) {
+    res.json(await this.reviews.list(this.param(req, "id")));
   }
 
-  private async show(req: Request, res: Response) {
-    res.json(await this.events.get(this.param(req, "id")));
+  private async summary(req: Request, res: Response) {
+    res.json(await this.reviews.summary(this.param(req, "id")));
   }
 
-  private async create(req: Request, res: Response) {
-    const event = await this.events.create(req.body ?? {});
-    res.status(201).location(`${req.baseUrl}/${event.slug}`).json(event);
-  }
-
-  private async update(req: Request, res: Response) {
-    res.json(await this.events.update(this.param(req, "id"), req.body ?? {}));
-  }
-
-  private async destroy(req: Request, res: Response) {
-    await this.events.remove(this.param(req, "id"));
-    res.status(204).end();
+  private async addReview(req: Request, res: Response) {
+    res.status(201).json(await this.reviews.add(this.param(req, "id"), req.body ?? {}));
   }
 
   private async addImage(req: Request, res: Response) {
     res.status(201).json(await this.events.addImage(this.param(req, "id"), req.body ?? {}));
+  }
+
+  private async click(req: Request, res: Response) {
+    await this.analytics.recordClick(this.param(req, "id"));
+    res.status(204).end();
   }
 }

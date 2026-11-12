@@ -3,103 +3,141 @@ import type { Server } from "node:http";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   FixedClock,
+  InMemoryAnalyticsRepository,
   InMemoryEventRepository,
   InMemoryProfileRepository,
   InMemoryReviewRepository,
-  Profile,
+  InMemoryUserRepository,
   SequentialIdGenerator,
 } from "@event-tree/core";
 import { Container } from "../src/container";
 import { API_PREFIX, createApp } from "../src/http/createApp";
+import { HmacTokenService, ScryptPasswordHasher } from "../src/infrastructure/crypto";
 
-const ADMIN_KEY = "test-key";
-const read = (res: Response): Promise<any> => res.json();
 let server: Server;
 let base: string;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const read = (res: Response): Promise<any> => res.json();
 
 beforeAll(async () => {
   const container = new Container(
     {
+      users: new InMemoryUserRepository(),
+      profiles: new InMemoryProfileRepository(),
       events: new InMemoryEventRepository(),
       reviews: new InMemoryReviewRepository(),
-      profile: new InMemoryProfileRepository(Profile.create({ name: "Test Tree" })),
+      analytics: new InMemoryAnalyticsRepository(),
     },
+    { hasher: new ScryptPasswordHasher(), tokens: new HmacTokenService("test-secret-at-least-16") },
     new FixedClock(new Date("2026-11-12T12:00:00Z")),
     new SequentialIdGenerator("t"),
   );
-  const app = createApp(container, { adminKey: ADMIN_KEY, corsOrigins: "*", staticAssetsDir: "." });
-  server = app.listen(0);
+  server = createApp(container, { corsOrigins: "*", staticAssetsDir: "." }).listen(0);
   await new Promise((resolve) => server.once("listening", resolve));
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}${API_PREFIX}`;
 });
 
 afterAll(() => new Promise<void>((resolve) => server.close(() => resolve())));
 
-const json = (body: unknown, admin = true) => ({
-  method: "POST",
-  headers: { "content-type": "application/json", ...(admin ? { "x-admin-key": ADMIN_KEY } : {}) },
-  body: JSON.stringify(body),
-});
+function call(method: string, path: string, body?: unknown, token?: string) {
+  return fetch(`${base}${path}`, {
+    method,
+    headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+}
 
 const pastEvent = {
-  title: "Cloud Study Jam",
-  category: "Tech",
-  startsAt: "2026-10-10T11:00:00Z",
-  endsAt: "2026-10-10T14:00:00Z",
-  coverImage: { url: "https://example.com/jam.jpg" },
+  title: "Spring Showcase",
+  category: "Theatre",
+  startsAt: "2026-10-10T17:00:00Z",
+  endsAt: "2026-10-10T20:00:00Z",
+  coverImage: { url: "https://example.com/show.jpg" },
 };
+const futureEvent = { ...pastEvent, title: "Opening Night", startsAt: "2026-12-05T17:00:00Z", endsAt: "2026-12-05T21:00:00Z" };
 
 describe("Event Tree API", () => {
-  it("serves the profile", async () => {
-    const res = await fetch(`${base}/profile`);
-    expect(res.status).toBe(200);
-    expect((await read(res)).name).toBe("Test Tree");
+  let token = "";
+  let otherToken = "";
+  let pastId = "";
+
+  it("checks usernames, signs up, and reads the session", async () => {
+    expect((await read(await call("GET", "/auth/username/jazzfest"))).available).toBe(true);
+    const res = await call("POST", "/auth/signup", { email: "host@example.com", username: "jazzfest", password: "password123", displayName: "City Jazz" });
+    expect(res.status).toBe(201);
+    token = (await read(res)).token;
+    expect((await read(await call("GET", "/auth/me", undefined, token))).username).toBe("jazzfest");
+    expect((await read(await call("GET", "/auth/username/jazzfest"))).available).toBe(false);
+
+    otherToken = (await read(await call("POST", "/auth/signup", { email: "b@example.com", username: "runclub", password: "password123" }))).token;
   });
 
-  it("requires the admin key to post events", async () => {
-    const res = await fetch(`${base}/events`, json(pastEvent, false));
-    expect(res.status).toBe(401);
+  it("returns 409 for a taken username and 401 for a wrong password or missing token", async () => {
+    expect((await call("POST", "/auth/signup", { email: "c@example.com", username: "jazzfest", password: "password123" })).status).toBe(409);
+    expect((await call("POST", "/auth/login", { email: "host@example.com", password: "nope-nope" })).status).toBe(401);
+    expect((await call("GET", "/me/events")).status).toBe(401);
+    expect((await call("GET", "/me/events", undefined, "forged.token")).status).toBe(401);
   });
 
-  it("posts an event, lists it under past, and fetches it by slug", async () => {
-    const created = await fetch(`${base}/events`, json(pastEvent));
+  it("lets a host post events and shows them on the public page", async () => {
+    const created = await call("POST", "/me/events", pastEvent, token);
     expect(created.status).toBe(201);
-    expect(created.headers.get("location")).toBe("/api/v1/events/cloud-study-jam");
+    pastId = (await read(created)).id;
+    await call("POST", "/me/events", futureEvent, token);
+    await call("POST", "/me/events", { ...futureEvent, title: "Secret Set", hidden: true }, token);
 
-    const past = await read(await fetch(`${base}/events?when=past`));
-    expect(past.map((e: { slug: string }) => e.slug)).toContain("cloud-study-jam");
-    expect((await read(await fetch(`${base}/events?when=upcoming`)))).toHaveLength(0);
-
-    const one = await read(await fetch(`${base}/events/cloud-study-jam`));
-    expect(one.status).toBe("past");
+    const tree = await read(await call("GET", "/pages/jazzfest"));
+    expect(tree.profile.displayName).toBe("City Jazz");
+    expect(tree.upcoming.map((e: { title: string }) => e.title)).toEqual(["Opening Night"]);
+    expect(tree.past.map((e: { title: string }) => e.title)).toEqual(["Spring Showcase"]);
+    expect((await call("GET", "/pages/jazzfest/events/opening-night")).status).toBe(200);
+    expect((await call("GET", "/pages/jazzfest/events/secret-set")).status).toBe(404);
+    expect(await read(await call("GET", "/me/events", undefined, token))).toHaveLength(3);
   });
 
-  it("returns field errors as 400 with the field name", async () => {
-    const res = await fetch(`${base}/events`, json({ ...pastEvent, coverImage: { url: "not a link" } }));
+  it("returns 403 when a host edits someone else's event", async () => {
+    expect((await call("PATCH", `/me/events/${pastId}`, { title: "Mine now" }, otherToken)).status).toBe(403);
+    expect((await call("DELETE", `/me/events/${pastId}`, undefined, otherToken)).status).toBe(403);
+  });
+
+  it("returns field errors as 400", async () => {
+    const res = await call("POST", "/me/events", { ...pastEvent, coverImage: { url: "not a link" } }, token);
     expect(res.status).toBe(400);
     expect((await read(res)).error.field).toBe("Image link");
   });
 
-  it("takes reviews and gallery images without the admin key", async () => {
-    const review = await fetch(`${base}/events/cloud-study-jam/reviews`, json({ authorName: "Amina", rating: 4 }, false));
-    expect(review.status).toBe(201);
-
-    const summary = await read(await fetch(`${base}/events/cloud-study-jam/reviews/summary`));
-    expect(summary).toMatchObject({ count: 1, average: 4 });
-
-    const image = await fetch(`${base}/events/cloud-study-jam/images`, json({ url: "https://example.com/1.jpg" }, false));
-    expect(image.status).toBe(201);
+  it("takes reviews and photos from visitors, and refuses early reviews", async () => {
+    expect((await call("POST", `/events/${pastId}/reviews`, { authorName: "Amina", rating: 4 })).status).toBe(201);
+    expect(await read(await call("GET", `/events/${pastId}/reviews/summary`))).toMatchObject({ count: 1, average: 4 });
+    const image = await call("POST", `/events/${pastId}/images`, { url: "https://example.com/1.jpg" });
     expect((await read(image)).gallery).toHaveLength(1);
+
+    const future = (await read(await call("GET", "/pages/jazzfest"))).upcoming[0];
+    expect((await call("POST", `/events/${future.id}/reviews`, { authorName: "A", rating: 5 })).status).toBe(409);
   });
 
-  it("refuses reviews for events that have not started (409)", async () => {
-    await fetch(`${base}/events`, json({ ...pastEvent, title: "Hackathon", startsAt: "2026-12-05T05:00:00Z", endsAt: "2026-12-07T05:00:00Z" }));
-    const res = await fetch(`${base}/events/hackathon/reviews`, json({ authorName: "Amina", rating: 5 }, false));
-    expect(res.status).toBe(409);
+  it("updates appearance and reorders events", async () => {
+    const profile = await read(await call("PATCH", "/me/profile", { bio: "Live jazz every month", appearance: { themeId: "gig-poster" } }, token));
+    expect(profile.appearance.themeId).toBe("gig-poster");
+    expect(await read(await call("GET", "/themes"))).toHaveLength(6);
+
+    const mine = await read(await call("GET", "/me/events", undefined, token));
+    const reversed = mine.map((e: { id: string }) => e.id).reverse();
+    const reordered = await read(await call("PUT", "/me/events/order", { ids: reversed }, token));
+    expect(reordered.map((e: { id: string }) => e.id)).toEqual(reversed);
   });
 
-  it("404s on unknown events and routes", async () => {
-    expect((await fetch(`${base}/events/nope`)).status).toBe(404);
-    expect((await fetch(`${base}/nothing-here`)).status).toBe(404);
+  it("counts page views and clicks for the host's analytics", async () => {
+    expect((await call("POST", "/pages/jazzfest/views")).status).toBe(204);
+    await call("POST", "/pages/jazzfest/views");
+    expect((await call("POST", `/events/${pastId}/clicks`)).status).toBe(204);
+    const stats = await read(await call("GET", "/me/analytics?days=7", undefined, token));
+    expect(stats).toMatchObject({ days: 7, views: 2, clicks: 1, clickRate: 0.5 });
+    expect(stats.topEvents[0]).toMatchObject({ eventId: pastId, clicks: 1 });
+  });
+
+  it("404s on unknown pages and routes", async () => {
+    expect((await call("GET", "/pages/nobody-here")).status).toBe(404);
+    expect((await call("GET", "/nothing")).status).toBe(404);
   });
 });
