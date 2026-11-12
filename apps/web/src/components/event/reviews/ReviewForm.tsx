@@ -1,14 +1,14 @@
 import { useState, type FormEvent } from "react";
 import { ApiError, type ReviewDTO } from "@event-tree/api-client";
-import { api } from "../../lib/api";
+import { api } from "../../../lib/api";
 import { StarInput } from "./StarInput";
 
 interface Props {
-  eventSlug: string;
+  eventId: string;
   onAdded: (review: ReviewDTO) => void;
 }
 
-export function ReviewForm({ eventSlug, onAdded }: Props) {
+export function ReviewForm({ eventId, onAdded }: Props) {
   const [authorName, setAuthorName] = useState("");
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -21,7 +21,7 @@ export function ReviewForm({ eventSlug, onAdded }: Props) {
     setBusy(true);
     setError("");
     try {
-      onAdded(await api().addReview(eventSlug, { authorName, rating, comment }));
+      onAdded(await api.addReview(eventId, { authorName, rating, comment }));
       setAuthorName("");
       setRating(0);
       setComment("");

@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { ApiError, type EventDTO, type ImageLinkDTO } from "@event-tree/api-client";
-import { api } from "../lib/api";
+import { api } from "../../lib/api";
 
 interface Props {
   event: EventDTO;
@@ -18,7 +18,7 @@ export function ImageGallery({ event, onUpdated }: Props) {
     e.preventDefault();
     setError("");
     try {
-      onUpdated(await api().addImage(event.slug, { url, caption, alt: caption }));
+      onUpdated(await api.addImage(event.id, { url, caption, alt: caption }));
       setUrl("");
       setCaption("");
     } catch (err) {
