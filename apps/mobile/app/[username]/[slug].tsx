@@ -5,7 +5,8 @@ import { Gallery } from "../../src/components/Gallery";
 import { ReviewSection } from "../../src/components/ReviewSection";
 import { api } from "../../src/lib/api";
 import { useResource } from "../../src/lib/useResource";
-import { DEFAULT_THEME, ThemeContext, tokens } from "../../src/theme";
+import { StatusBar } from "expo-status-bar";
+import { DEFAULT_THEME, ThemeContext, isDark, tokens } from "../../src/theme";
 
 const STATUS_LABEL = { upcoming: "Upcoming", live: "Happening now", past: "Past event" } as const;
 
@@ -29,6 +30,7 @@ export default function EventScreen() {
 
   return (
     <ThemeContext.Provider value={theme}>
+    <StatusBar style={isDark(theme.background) ? "light" : "dark"} />
     <ScrollView contentContainerStyle={styles.content} style={{ backgroundColor: theme.background }}>
       <Stack.Screen
         options={{

@@ -35,6 +35,14 @@ export const tokens = {
   danger: "#ff8a80",
 };
 
+/** True when light text reads better on this colour (sRGB relative luminance). Picks the status bar style. */
+export function isDark(hex: string): boolean {
+  const n = parseInt(hex.replace("#", "").slice(0, 6), 16);
+  const lin = (c: number) => ((c /= 255) <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const l = 0.2126 * lin((n >> 16) & 255) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255);
+  return l < 0.4;
+}
+
 /** Public-page screens provide the host's colours; everything else gets the default. */
 export const ThemeContext = createContext<ThemeColors>(DEFAULT_THEME);
 export const useTheme = () => useContext(ThemeContext);

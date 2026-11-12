@@ -8,7 +8,8 @@ import { NextUpCard } from "../../src/components/NextUpCard";
 import { Chip, PillSwitch } from "../../src/components/Pill";
 import { api } from "../../src/lib/api";
 import { useResource } from "../../src/lib/useResource";
-import { DEFAULT_THEME, ThemeContext, tokens } from "../../src/theme";
+import { StatusBar } from "expo-status-bar";
+import { DEFAULT_THEME, ThemeContext, isDark, tokens } from "../../src/theme";
 
 type Tab = "upcoming" | "past";
 
@@ -123,6 +124,7 @@ export default function TreeScreen() {
 
   return (
     <ThemeContext.Provider value={theme}>
+    <StatusBar style={isDark(theme.background) ? "light" : "dark"} />
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={["top"]}>
       <FlatList
         data={visible}
