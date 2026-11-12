@@ -5,8 +5,8 @@ export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>
 export interface TransportOptions {
   baseUrl: string;
   fetch?: FetchLike;
-  /** Sent as x-admin-key on every request when set. */
-  adminKey?: string;
+  /** Returns the session token to send as `Authorization: Bearer`, or null when logged out. Read on every request. */
+  getToken?: () => string | null | undefined;
   timeoutMs?: number;
 }
 
@@ -31,6 +31,10 @@ export class HttpTransport {
     return this.request<T>("POST", path, body);
   }
 
+  put<T>(path: string, body: unknown): Promise<T> {
+    return this.request<T>("PUT", path, body);
+  }
+
   patch<T>(path: string, body: unknown): Promise<T> {
     return this.request<T>("PATCH", path, body);
   }
@@ -44,7 +48,8 @@ export class HttpTransport {
     const timer = setTimeout(() => controller.abort(), this.options.timeoutMs ?? 15_000);
     const headers: Record<string, string> = { accept: "application/json" };
     if (body !== undefined) headers["content-type"] = "application/json";
-    if (this.options.adminKey) headers["x-admin-key"] = this.options.adminKey;
+    const token = this.options.getToken?.();
+    if (token) headers.authorization = `Bearer ${token}`;
 
     let res: Response;
     try {

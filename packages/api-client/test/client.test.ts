@@ -14,23 +14,25 @@ describe("EventTreeClient", () => {
   it("builds versioned URLs with query strings and skips empty params", async () => {
     const { fetch, calls } = fakeFetch(200, []);
     const client = new EventTreeClient({ baseUrl: "http://api.test/", fetch });
-    await client.listEvents({ when: "past", q: "", category: "Tech" });
-    expect(calls[0]!.url).toBe("http://api.test/api/v1/events?when=past&category=Tech");
+    await client.listPageEvents("jazzfest", { when: "past", q: "", category: "Tech" });
+    expect(calls[0]!.url).toBe("http://api.test/api/v1/pages/jazzfest/events?when=past&category=Tech");
   });
 
-  it("sends JSON bodies and the admin key", async () => {
+  it("sends JSON bodies and the bearer token from getToken", async () => {
     const { fetch, calls } = fakeFetch(201, { id: "1" });
-    const client = new EventTreeClient({ baseUrl: "http://api.test", fetch, adminKey: "k" });
+    const client = new EventTreeClient({ baseUrl: "http://api.test", fetch, getToken: () => "abc" });
     await client.addReview("my event", { authorName: "A", rating: 5 });
     expect(calls[0]!.url).toBe("http://api.test/api/v1/events/my%20event/reviews");
-    expect(calls[0]!.init?.headers).toMatchObject({ "content-type": "application/json", "x-admin-key": "k" });
+    expect(calls[0]!.init?.headers).toMatchObject({ "content-type": "application/json", authorization: "Bearer abc" });
+    await client.reorderEvents(["b", "a"]);
+    expect(calls[1]).toMatchObject({ url: "http://api.test/api/v1/me/events/order", init: { method: "PUT" } });
     expect(JSON.parse(String(calls[0]!.init?.body))).toEqual({ authorName: "A", rating: 5 });
   });
 
   it("turns error bodies into ApiError with field and Retry-After", async () => {
     const { fetch } = fakeFetch(429, { error: { code: "RATE_LIMIT", message: "Slow down", field: "x" } }, { "retry-after": "30" });
     const client = new EventTreeClient({ baseUrl: "http://api.test", fetch });
-    const error = await client.getProfile().catch((e: unknown) => e);
+    const error = await client.getMyProfile().catch((e: unknown) => e);
     expect(error).toBeInstanceOf(ApiError);
     expect(error).toMatchObject({ status: 429, code: "RATE_LIMIT", field: "x", retryAfterSeconds: 30 });
   });
@@ -42,7 +44,7 @@ describe("EventTreeClient", () => {
         throw new TypeError("failed to fetch");
       },
     });
-    const error = (await client.getProfile().catch((e: unknown) => e)) as ApiError;
+    const error = (await client.getMyProfile().catch((e: unknown) => e)) as ApiError;
     expect(error.isNetwork).toBe(true);
   });
 });
