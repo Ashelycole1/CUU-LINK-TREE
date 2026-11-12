@@ -1,8 +1,12 @@
 <div align="center">
 
-# 🌳 Event Tree
+# 🎟️ Event Tree
 
-### A Linktree for events. Post what's coming up, look back at what happened, share the photos, and leave a review.
+### One link for every event you host.
+
+A link-in-bio platform for events, built the way Linktree works: claim a name, get a page at
+`/yourname`, and manage it from a dashboard with a live phone preview. Instead of links, your page
+lists **events**. Upcoming ones count down, past ones keep their photos and reviews.
 
 One TypeScript codebase for a **web app**, a **mobile app** and the **API** behind both.
 
@@ -16,9 +20,29 @@ One TypeScript codebase for a **web app**, a **mobile app** and the **API** behi
 ![Vitest](https://img.shields.io/badge/tests-Vitest-6E9F18?style=flat-square&logo=vitest&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-f4c430?style=flat-square)
 
-[Features](#-features) · [Tech stack](#-tech-stack) · [Architecture](#-architecture) · [Repo structure](#-repository-structure) · [OOP design](#-object-oriented-design) · [Quick start](#-quick-start) · [API](#-api-reference) · [How it was built](#-how-it-was-built)
+[How it works](#-how-it-works) · [Features](#-features) · [Tech stack](#-tech-stack) · [Architecture](#-architecture) · [Repo structure](#-repository-structure) · [OOP design](#-object-oriented-design) · [Quick start](#-quick-start) · [API](#-api-reference)
 
 </div>
+
+---
+
+## 🧭 How it works
+
+Event Tree copies how Linktree works, not how it looks. It has its own name, logo, colours and type,
+and every Linktree feature has an event version:
+
+| Linktree | Event Tree |
+|---|---|
+| Claim `linktr.ee/yourname` on the home page | Claim `/yourname` on the landing page, with a live "is it free?" check |
+| Admin: a list of link cards with toggles and drag handles | `/admin`: a list of **event cards** with a show/hide switch, up/down reorder, edit and delete |
+| Live phone preview beside the editor | The same: the real public page in a phone frame, reloaded after each save |
+| Appearance: themes, button styles, fonts, colours | Six themes, four button styles (**ticket stub**, pill, outline, hard shadow), three fonts, custom colours |
+| Social icons under the bio | Instagram, X, TikTok, YouTube, LinkedIn, Facebook, WhatsApp, website |
+| Insights: views, clicks, click rate | `/admin/analytics`: views and clicks per day, click rate, most-clicked events |
+| A link button | An **event ticket**: poster, title, venue, and a perforated date stub |
+| (nothing) | Upcoming/Past sorts itself, countdowns, photo galleries, star reviews |
+
+The full reverse-engineering notes are in [docs/reverse-engineering/linktree.md](docs/reverse-engineering/linktree.md).
 
 ---
 
@@ -26,16 +50,17 @@ One TypeScript codebase for a **web app**, a **mobile app** and the **API** behi
 
 | | Feature | Where |
 |---|---|---|
-| 🗓️ | **Upcoming / Past switch.** An event moves to Past by itself once it ends. Status is computed from the clock and never stored. | web · mobile |
-| ⏳ | **Next up cards** with live countdowns, and a *Happening now* tag while an event is running | web · mobile |
-| ➕ | **Post an event** with a title, category, times, venue, description, a poster image link and any number of buttons (Register, Tickets, Slides…) | web · mobile · API |
-| 🖼️ | **Image links.** A cover poster plus a photo gallery that anyone can add to by pasting an image URL. Opens in a full-screen viewer. | web · mobile · API |
+| 🙋 | **Accounts.** Sign up in two steps (pick a username, then email and password). Usernames are checked live as you type, and names used by app routes (`admin`, `login`…) are reserved. | web · API |
+| 🎛️ | **Host dashboard.** Add, edit, hide, reorder and delete events. Your newest event goes on top. Deleting asks first and suggests hiding instead. | web · mobile · API |
+| 📱 | **Live preview.** The editor sits beside a phone frame showing your real page. It reloads after every change and doesn't count as a view. | web |
+| 🎨 | **Appearance.** Six theme presets, four button styles, three fonts, five custom colours, a profile image, a header image and social icons. | web · API |
+| 📈 | **Analytics.** Page views and event clicks per day over 7, 14 or 30 days, click rate, and your most-clicked events. Counts only: no IP addresses, cookies or user agents. | web · API |
+| 🗓️ | **Upcoming / Past switch.** An event moves to Past by itself once it ends. Status comes from the clock and is never stored. | web · mobile |
+| ⏳ | **Next up cards** with live countdowns, and a *Happening now* tag while an event is running. | web · mobile |
+| 🖼️ | **Image links.** A poster for each event, plus a photo gallery that visitors add to by pasting an image link. Opens in a full-screen viewer. | web · mobile · API |
 | ⭐ | **Reviews.** A 1–5 star rating with an optional comment, an average and a star breakdown. Reviews open once an event has started. | web · mobile · API |
-| 🔎 | **Search and category chips.** Categories are read from the data. | web · mobile |
-| 🔗 | **Share links.** Every event has a readable URL (`/e/devfest-on-campus`) and a share button. | web · mobile |
-| 🎨 | **Theming.** Profile colours (Linktree's `theme.colors`) restyle both apps. | web · mobile |
-| 🔐 | **Optional admin key** for creating, editing and deleting events. Reviews and photos stay open. | API |
-| 📄 | **Zero-build page.** The original single-file Linktree-style page still works on its own. | `apps/static` |
+| 🔎 | **Search and category chips** on every page. | web · mobile |
+| 🔗 | **Readable links.** `/nightandsong/carols-culture-night`, with a share button. | web · mobile |
 
 ---
 
@@ -43,16 +68,18 @@ One TypeScript codebase for a **web app**, a **mobile app** and the **API** behi
 
 | Layer | Technology | Why |
 |---|---|---|
-| **Language** | TypeScript 5 (strict, `noUncheckedIndexedAccess`) | One language and one set of types from the database record to the button |
+| **Language** | TypeScript 5 (strict, `noUncheckedIndexedAccess`) | One language and one set of types from the stored record to the button |
 | **Domain** | Plain TypeScript classes (`packages/core`) | No framework imports, so it runs in Node, the browser and React Native alike |
 | **API** | Node.js ≥ 20, Express 4, `tsx` | Small, well known, and runs TypeScript directly |
-| **Storage** | JSON files via `JsonFileStore` (atomic writes) | No database to install. Swap in Postgres by implementing two interfaces |
-| **Web** | React 18, Vite 5, React Router 6, plain CSS with custom properties | Fast dev server, 60 KB gzipped bundle, no CSS framework |
-| **Mobile** | Expo SDK 52, React Native 0.76, Expo Router 4 | One codebase for iOS and Android, file-based routes like the web app |
+| **Auth** | `scrypt` password hashes, HMAC-SHA256 signed tokens (30 days) | Built on `node:crypto`, with no auth library to trust or update |
+| **Storage** | JSON files via `JsonFileStore` (atomic writes) | No database to install. Swap in Postgres by implementing the repository interfaces |
+| **Web** | React 18, Vite 5, React Router 6, plain CSS with custom properties | One stylesheet drives every theme; no CSS framework |
+| **Mobile** | Expo SDK 52, React Native 0.76, Expo Router 4 | One codebase for iOS and Android, with file-based routes like the web app |
 | **Shared client** | `@event-tree/api-client` (fetch-based) | Web and mobile call the same typed methods |
+| **Type** | Bricolage Grotesque, Figtree, Fraunces (Google Fonts) | Brand display face, body face, and a serif theme option |
 | **Tests** | Vitest | Domain rules, HTTP routes and the client are all covered |
 | **Monorepo** | npm workspaces | No extra tooling needed |
-| **Research** | [REA](https://github.com/morluto/rea) | Used to reverse engineer Linktree's page model ([findings](docs/reverse-engineering/linktree.md)) |
+| **Research** | [REA](https://github.com/morluto/rea) | Used to reverse engineer Linktree's page model |
 
 ---
 
@@ -61,27 +88,27 @@ One TypeScript codebase for a **web app**, a **mobile app** and the **API** behi
 ```mermaid
 flowchart TB
   subgraph Clients
-    WEB["apps/web<br/>React + Vite"]
-    MOB["apps/mobile<br/>Expo + React Native"]
+    WEB["apps/web<br/>Landing · Auth · /admin dashboard · /:username pages"]
+    MOB["apps/mobile<br/>Home · host pages · log-in · dashboard"]
   end
 
   CLIENT["packages/api-client<br/>EventTreeClient · HttpTransport · Format"]
 
   subgraph API["apps/api (Express)"]
-    CTRL["Controllers<br/>Event · Review · Profile"]
+    CTRL["Controllers<br/>Auth · Dashboard · PublicPage · Event"]
     CONT["Container<br/>(composition root)"]
-    REPO["JSON repositories<br/>JsonFileStore"]
+    REPO["JSON repositories · ScryptPasswordHasher · HmacTokenService"]
   end
 
   subgraph CORE["packages/core (pure TypeScript)"]
-    SVC["Services<br/>EventService · ReviewService"]
-    ENT["Entities & value objects<br/>Event · Review · ImageLink · EventLink · Rating · Profile"]
-    PORTS["Interfaces<br/>EventRepository · ReviewRepository · Clock · IdGenerator"]
+    SVC["Services<br/>AuthService · EventService · ReviewService · ProfileService · AnalyticsService"]
+    ENT["Entities & value objects<br/>User · Username · Profile · Event · Review · ImageLink · EventLink · Rating"]
+    PORTS["Interfaces<br/>*Repository · PasswordHasher · TokenService · Clock · IdGenerator"]
   end
 
   WEB --> CLIENT
   MOB --> CLIENT
-  CLIENT -- "HTTP /api/v1" --> CTRL
+  CLIENT -- "HTTP /api/v1 (Bearer token)" --> CTRL
   CTRL --> SVC
   CONT -. wires .-> SVC
   CONT -. wires .-> REPO
@@ -92,19 +119,21 @@ flowchart TB
   REPO --> DATA
 ```
 
-**Dependencies point inward.** `core` imports nothing from the other packages. The API adapts HTTP to core
-services, and the apps adapt core DTOs to UI. Swapping Express, the JSON store or React touches one
-layer only.
+**Dependencies point inward.** `core` imports nothing from the other packages. The API adapts HTTP to
+core services, and the apps adapt core DTOs to the screen. Every service checks ownership itself: a
+host can only change events whose `ownerId` matches their own id, whichever client calls.
 
-A request, end to end (posting a review):
+A request, end to end (hiding an event from the dashboard):
 
 ```
-ReviewForm (web)  →  EventTreeClient.addReview()  →  POST /api/v1/events/:id/reviews
-  →  ReviewController.create()  →  ReviewService.add()
-       ├─ event.acceptsReviews(clock.now())   ← business rule lives on the entity
-       ├─ Review.create() → Rating.of(stars)  ← validation lives in value objects
-       └─ ReviewRepository.save()             ← interface; JsonReviewRepository implements it
-  ←  201 ReviewDTO   (or 409 BusinessRuleError → { error: { code, message } })
+EventCard switch (web)  →  EventTreeClient.updateEvent(id, { hidden: true })
+  →  PATCH /api/v1/me/events/:eventId   Authorization: Bearer <token>
+  →  DashboardController (AuthenticatedController.requireUser → AuthService.authenticate)
+  →  EventService.update(ownerId, id, patch)
+       ├─ event.isOwnedBy(ownerId)          else ForbiddenError → 403
+       ├─ event.update(patch)               ← every rule re-checked on the entity
+       └─ EventRepository.save(event)
+  ←  200 EventDTO   → the phone preview reloads; the public page drops the event
 ```
 
 More detail in [`docs/architecture.md`](docs/architecture.md).
@@ -116,94 +145,108 @@ More detail in [`docs/architecture.md`](docs/architecture.md).
 ```
 event-tree/
 ├── apps/
-│   ├── api/                         Express REST API
+│   ├── api/                              Express REST API
 │   │   ├── src/
-│   │   │   ├── config.ts            typed env config
-│   │   │   ├── container.ts         composition root (dependency injection)
-│   │   │   ├── server.ts            entry point
+│   │   │   ├── config.ts                 typed env config (AUTH_SECRET, CORS, data dir)
+│   │   │   ├── container.ts              composition root (dependency injection)
+│   │   │   ├── server.ts                 entry point
 │   │   │   ├── http/
-│   │   │   │   ├── Controller.ts    abstract base controller
-│   │   │   │   ├── controllers/     EventController · ReviewController · ProfileController
-│   │   │   │   ├── middleware.ts    error mapping · admin guard · 404
-│   │   │   │   └── createApp.ts     builds the Express app (no listen, so it is testable)
-│   │   │   ├── infrastructure/      JsonFileStore · Json*Repository
-│   │   │   └── seed/seed.ts         loads apps/static/events.js as sample data
+│   │   │   │   ├── Controller.ts         base Controller + AuthenticatedController
+│   │   │   │   ├── controllers/          Auth · Dashboard · PublicPage · Event
+│   │   │   │   ├── middleware.ts         maps domain errors to 400/401/403/404/409
+│   │   │   │   └── createApp.ts          builds the Express app (no listen, so it is testable)
+│   │   │   ├── infrastructure/           JsonFileStore · Json*Repository · crypto (scrypt, HMAC)
+│   │   │   └── seed/                     demoData.ts (3 demo hosts) · seed.ts
 │   │   └── test/api.test.ts
 │   │
-│   ├── web/                         React + Vite web app
+│   ├── web/                              React + Vite web app
 │   │   └── src/
-│   │       ├── pages/               TreePage · EventPage · NewEventPage · NotFoundPage
-│   │       ├── components/          ProfileHeader · StatusTabs · Filters · EventButton · NextUpCard
-│   │       │   │                    ImageGallery · EventForm · ThemeProvider · Page
-│   │       │   └── reviews/         RatingBars · ReviewForm · ReviewList · StarInput
-│   │       ├── lib/                 api · useResource · SessionStore
-│   │       └── styles/app.css       design tokens + Linktree measurements
+│   │       ├── pages/
+│   │       │   ├── Landing.tsx           claim form, live phone, feature bands, examples
+│   │       │   ├── auth/                 Signup (2 steps) · Login
+│   │       │   ├── admin/                AdminLayout · EventsAdmin · AppearanceAdmin · AnalyticsAdmin
+│   │       │   └── public/               PublicPage (/:username) · PublicEventPage (/:username/:slug)
+│   │       ├── components/
+│   │       │   ├── brand/                Logo · PhoneFrame · ClaimForm
+│   │       │   ├── admin/                EventCard · EventEditor · Icon
+│   │       │   ├── tree/                 TreeView · EventTicket · ProfileHeader · NextUpCard · StatusTabs · Filters
+│   │       │   └── event/                ImageGallery · reviews/ (RatingBars · ReviewForm · ReviewList · StarInput)
+│   │       ├── auth/AuthContext.tsx      AuthProvider · useAuth · RequireAuth
+│   │       ├── theme/appearance.ts       a host's appearance → CSS custom properties
+│   │       ├── lib/                      api · BrowserStore · useResource
+│   │       └── styles/                   tokens · base · landing · auth · admin · tree
 │   │
-│   ├── mobile/                      Expo + React Native app
-│   │   ├── app/                     expo-router screens: index · e/[slug] · new · _layout
-│   │   └── src/
-│   │       ├── components/          EventRow · NextUpCard · Pill · Gallery · ReviewSection · Field
-│   │       ├── lib/                 api · useResource
-│   │       └── theme.ts             same tokens as the web app
+│   ├── mobile/                           Expo + React Native app
+│   │   ├── app/                          index · login · [username]/index · [username]/[slug]
+│   │   │                                 dashboard/index · dashboard/new · _layout
+│   │   └── src/                          components · auth · lib · theme.ts
 │   │
-│   └── static/                      the original zero-build page (index.html + events.js)
-│       └── assets/                  hero art and event posters (also served by the API)
+│   └── static/                           the original zero-build page, plus demo posters in assets/
 │
 ├── packages/
-│   ├── core/                        🧠 domain layer, framework-free
+│   ├── core/                             🧠 domain layer, framework-free
 │   │   ├── src/
-│   │   │   ├── shared/              Entity · ValueObject · errors · Guard · Clock/IdGenerator ports
-│   │   │   ├── events/              Event · ImageLink · EventLink · EventRepository · EventService
-│   │   │   ├── reviews/             Review · Rating · RatingSummary · ReviewRepository · ReviewService
-│   │   │   ├── profile/             Profile · ProfileRepository
-│   │   │   ├── infrastructure/      in-memory repositories (tests, previews)
-│   │   │   └── dto.ts               data shapes shared by API and apps
+│   │   │   ├── shared/                   Entity · ValueObject · errors · Guard · Clock/IdGenerator ports
+│   │   │   ├── users/                    User · Username · AuthService
+│   │   │   ├── profile/                  Profile · ProfileService · themes
+│   │   │   ├── events/                   Event · ImageLink · EventLink · EventRepository · EventService
+│   │   │   ├── reviews/                  Review · Rating · RatingSummary · ReviewService
+│   │   │   ├── analytics/                AnalyticsService
+│   │   │   ├── infrastructure/           in-memory repositories, fake hasher and tokens (tests)
+│   │   │   └── dto.ts                    data shapes shared by API and apps
 │   │   └── test/core.test.ts
 │   │
-│   └── api-client/                  🔌 typed client used by web + mobile
-│       ├── src/                     EventTreeClient · HttpTransport · ApiError · Format
+│   └── api-client/                       🔌 typed client used by web + mobile
+│       ├── src/                          EventTreeClient · HttpTransport · ApiError · Format
 │       └── test/client.test.ts
 │
 ├── docs/
-│   ├── architecture.md              layers, rules, extension points
-│   ├── reverse-engineering/
-│   │   └── linktree.md              REA analysis of Linktree's profile page
-│   └── PROGRESS.md                  build log, module by module
+│   ├── architecture.md                   layers, rules, extension points
+│   ├── reverse-engineering/linktree.md   REA analysis of Linktree
+│   └── PROGRESS.md                       build log, module by module
 │
-├── package.json                     npm workspaces + root scripts
-└── tsconfig.base.json               shared strict compiler settings
+├── package.json                          npm workspaces + root scripts
+└── tsconfig.base.json                    shared strict compiler settings
 ```
 
 ---
 
 ## 🧱 Object-oriented design
 
-The code follows standard OOP principles. Each one shows up in a specific place:
-
 | Principle | Where it shows up |
 |---|---|
-| **Encapsulation** | `Event` keeps its state private. It only changes through `update()`, `addImage()` and `moveTo()`, which re-check every rule, so an `Event` can never be invalid. |
-| **Abstraction** | Services depend on `EventRepository` and `ReviewRepository` interfaces, not on files or SQL. `Clock` and `IdGenerator` hide time and randomness. |
-| **Inheritance** | `Entity` and `ValueObject` base classes give identity and equality. `DomainError` → `ValidationError` / `BusinessRuleError` / `NotFoundError`. `Controller` → `EventController` / `ReviewController` / `ProfileController`. |
-| **Polymorphism** | `InMemoryEventRepository` and `JsonEventRepository` are interchangeable behind one interface. The error middleware maps any `DomainError` subclass to a status code with `instanceof`. |
-| **Single responsibility** | `HttpTransport` only does HTTP, and `EventTreeClient` only knows endpoints. `JsonFileStore` only does atomic file I/O; repositories only map records to entities. |
-| **Open/closed** | Add a storage backend by adding a class, with no change to services. Add an endpoint by adding a controller to the list in `createApp`. |
+| **Encapsulation** | `Event` and `Profile` keep their state private and change only through methods (`update()`, `addImage()`, `moveTo()`) that re-check every rule. Neither can ever be invalid. |
+| **Abstraction** | Services depend on interfaces: `UserRepository`, `EventRepository`, `PasswordHasher`, `TokenService`, `Clock`. None of them know about files, HTTP or `node:crypto`. |
+| **Inheritance** | `Entity` and `ValueObject` give identity and equality. `DomainError` → `ValidationError` / `BusinessRuleError` / `NotFoundError` / `ConflictError` / `UnauthorizedError` / `ForbiddenError`. `Controller` → `AuthenticatedController` → `DashboardController`. |
+| **Polymorphism** | `ScryptPasswordHasher` and the tests' `PlainTextPasswordHasher` are interchangeable, as are `HmacTokenService` and `FakeTokenService`. The error middleware maps any `DomainError` subclass to a status code with `instanceof`. |
+| **Single responsibility** | `AuthService` only knows who you are; `EventService` only what you may do to events; `AnalyticsService` only counts. `HttpTransport` only does HTTP; `EventTreeClient` only knows endpoints. |
+| **Open/closed** | A new theme is one entry in `themes.ts`. A new button style is one CSS block. A new storage backend is a new class. Services don't change in any of these cases. |
 | **Dependency inversion** | `Container` is the only place that picks concrete classes. Tests build the same graph with in-memory repositories and a `FixedClock`. |
-| **Value objects** | `ImageLink` (http/https only), `EventLink` (typed `kind`) and `Rating` (whole stars 1–5) validate themselves and are immutable. |
+| **Value objects** | `Username` (pattern + reserved names), `ImageLink` (http/https only), `EventLink` (typed `kind`) and `Rating` (whole stars 1–5) validate themselves and are immutable. |
 
 ---
 
 ## 🚀 Quick start
 
-**Needs** Node.js 20.12 or newer and npm 10. For mobile, also install the Expo Go app on a phone, or an emulator.
+**Needs** Node.js 20.12 or newer and npm 10. For mobile, also install Expo Go on a phone, or an emulator.
 
 ```bash
 npm install            # installs every workspace
-npm run seed           # loads 8 sample events + reviews into apps/api/data/
+npm run seed           # 3 demo hosts with events, reviews and 30 days of sample analytics
 npm run dev:api        # http://localhost:4000/api/v1
 npm run dev:web        # http://localhost:5173  (second terminal)
 npm run dev:mobile     # Expo dev server; press i / a, or scan the QR code with Expo Go
 ```
+
+Then open **http://localhost:5173**, claim a name, or log in as a demo host:
+
+| Page | Log in with | Password |
+|---|---|---|
+| `/buildersmeetup` (Stage blue theme) | `buildersmeetup@demo.eventtree.test` | `demo-password` |
+| `/nightandsong` (Aubergine theme) | `nightandsong@demo.eventtree.test` | `demo-password` |
+| `/sunrisesports` (Wristband theme) | `sunrisesports@demo.eventtree.test` | `demo-password` |
+
+These accounts exist only in your local `apps/api/data/` folder.
 
 | Command | What it does |
 |---|---|
@@ -218,10 +261,13 @@ npm run dev:mobile     # Expo dev server; press i / a, or scan the QR code with 
 |---|---|---|---|
 | `apps/api/.env` | `PORT` | `4000` | API port |
 | | `PUBLIC_URL` | `http://localhost:4000` | Used to build poster links when seeding |
-| | `ADMIN_KEY` | *(empty)* | When set, creating, editing and deleting events needs `x-admin-key` |
+| | `AUTH_SECRET` | dev fallback | Signs login tokens. **Required** when `NODE_ENV=production`; the API refuses to start without it |
+| | `DATA_DIR` | `./data` | Where the JSON files live |
 | | `CORS_ORIGINS` | `*` | Comma-separated list of allowed origins |
 | `apps/web/.env` | `VITE_API_URL` | *(same origin)* | API location in production |
 | `apps/mobile/.env` | `EXPO_PUBLIC_API_URL` | `http://localhost:4000` | Android emulator: `http://10.0.2.2:4000`. Phone: your computer's LAN IP |
+
+Generate a secret with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
 
 > **Testing on a real phone:** start the API with `PUBLIC_URL=http://<LAN-IP>:4000`, then re-seed so the poster links point to an address the phone can reach.
 
@@ -230,33 +276,60 @@ npm run dev:mobile     # Expo dev server; press i / a, or scan the QR code with 
 ## 📡 API reference
 
 Base path: **`/api/v1`**. Errors always look like `{ "error": { "code", "message", "field?" } }`.
+Routes marked 🔒 need `Authorization: Bearer <token>` from sign-up or log-in.
 
-| Method | Path | Body | Auth | Returns |
-|---|---|---|---|---|
-| `GET` | `/profile` | | | `ProfileDTO` |
-| `PUT` | `/profile` | `ProfileDTO` | admin | `ProfileDTO` |
-| `GET` | `/categories` | | | `string[]` |
-| `GET` | `/events?when=upcoming\|past\|all&category=&q=&limit=` | | | `EventDTO[]` |
-| `GET` | `/events/:idOrSlug` | | | `EventDTO` |
-| `POST` | `/events` | `CreateEventInput` | admin | `201 EventDTO` |
-| `PATCH` | `/events/:idOrSlug` | `Partial<CreateEventInput>` | admin | `EventDTO` |
-| `DELETE` | `/events/:idOrSlug` | | admin | `204` |
-| `POST` | `/events/:idOrSlug/images` | `{ url, alt?, caption? }` | | `201 EventDTO` |
-| `GET` | `/events/:idOrSlug/reviews` | | | `ReviewDTO[]` (newest first) |
-| `GET` | `/events/:idOrSlug/reviews/summary` | | | `{ count, average, distribution }` |
-| `POST` | `/events/:idOrSlug/reviews` | `{ authorName, rating, comment? }` | | `201 ReviewDTO` |
+**Accounts**
 
-Status codes: `400` validation · `401` missing or wrong admin key · `404` not found · `409` business rule (e.g. reviewing an event that hasn't started).
+| Method | Path | Body | Returns |
+|---|---|---|---|
+| `POST` | `/auth/signup` | `{ email, username, password, displayName? }` | `201 { token, user }` |
+| `POST` | `/auth/login` | `{ email, password }` | `{ token, user }` |
+| `GET` | `/auth/me` 🔒 | | `UserDTO` |
+| `GET` | `/auth/username/:username` | | `{ username, available, reason? }` |
+
+**Dashboard** (always the logged-in host's own data)
+
+| Method | Path | Body | Returns |
+|---|---|---|---|
+| `GET` | `/me/profile` 🔒 | | `ProfileDTO` |
+| `PATCH` | `/me/profile` 🔒 | `UpdateProfileInput` (name, bio, images, socials, appearance) | `ProfileDTO` |
+| `GET` | `/me/events` 🔒 | | `EventDTO[]` in page order, hidden ones included |
+| `POST` | `/me/events` 🔒 | `CreateEventInput` | `201 EventDTO` (goes to the top) |
+| `PUT` | `/me/events/order` 🔒 | `{ ids: string[] }` | `EventDTO[]` |
+| `PATCH` | `/me/events/:eventId` 🔒 | `Partial<CreateEventInput>`, incl. `hidden` | `EventDTO` |
+| `DELETE` | `/me/events/:eventId` 🔒 | | `204` |
+| `GET` | `/me/analytics?days=14` 🔒 | | `AnalyticsSummaryDTO` (1–90 days) |
+
+**Public pages**
+
+| Method | Path | Body | Returns |
+|---|---|---|---|
+| `GET` | `/themes` | | `ThemePreset[]` |
+| `GET` | `/pages/:username` | | `TreeDTO` (profile, upcoming, past, categories) |
+| `GET` | `/pages/:username/events?when=&category=&q=` | | `EventDTO[]` |
+| `GET` | `/pages/:username/events/:slug` | | `EventDTO` |
+| `POST` | `/pages/:username/views` | | `204` (counts one page view) |
+| `POST` | `/events/:id/clicks` | | `204` (counts one event click) |
+| `POST` | `/events/:id/images` | `{ url, alt?, caption? }` | `201 EventDTO` |
+| `GET` | `/events/:id/reviews` | | `ReviewDTO[]` (newest first) |
+| `GET` | `/events/:id/reviews/summary` | | `{ count, average, distribution }` |
+| `POST` | `/events/:id/reviews` | `{ authorName, rating, comment? }` | `201 ReviewDTO` |
+
+Status codes: `400` validation · `401` not logged in · `403` not your event · `404` not found · `409` taken (email or username) or a business rule (e.g. reviewing an event that hasn't started).
 
 <details>
-<summary>Example: post an event</summary>
+<summary>Example: log in and add an event</summary>
 
 ```bash
-curl -X POST http://localhost:4000/api/v1/events \
+TOKEN=$(curl -s -X POST http://localhost:4000/api/v1/auth/login \
   -H "content-type: application/json" \
+  -d '{"email":"buildersmeetup@demo.eventtree.test","password":"demo-password"}' | node -pe 'JSON.parse(require("fs").readFileSync(0)).token')
+
+curl -X POST http://localhost:4000/api/v1/me/events \
+  -H "authorization: Bearer $TOKEN" -H "content-type: application/json" \
   -d '{
     "title": "Robotics Demo Day",
-    "category": "Tech",
+    "category": "Talks",
     "startsAt": "2026-12-10T10:00:00+03:00",
     "endsAt":   "2026-12-10T13:00:00+03:00",
     "venue": "Innovation Lab",
@@ -270,32 +343,37 @@ curl -X POST http://localhost:4000/api/v1/events \
 
 ## 🔍 Reverse engineering Linktree
 
-The data model comes from studying a live Linktree profile with [REA](https://github.com/morluto/rea):
-the page's Next.js `__NEXT_DATA__` plus a static analysis of its JavaScript chunks (355 modules, versioned
-`/v1/` REST routes, GraphQL form submissions). Linktree's `links[]` became `Event`, `thumbnail` became
-`ImageLink`, `scheduleStart` became derived status, and form submissions became reviews. The full field
-mapping and evidence are in **[docs/reverse-engineering/linktree.md](docs/reverse-engineering/linktree.md)**.
+The data model and product shape come from studying Linktree with [REA](https://github.com/morluto/rea):
+the profile page's Next.js `__NEXT_DATA__` (`account`, `links[]`, `theme.colors`) plus a static analysis
+of its JavaScript (355 modules, versioned `/v1/` REST routes such as `/v1/auth/me`, GraphQL form
+submissions). Linktree's `links[]` became `Event`, `thumbnail` became `ImageLink`, `scheduleStart` became
+derived status, `theme.colors` became `AppearanceDTO`, and the admin's link editor became the events
+dashboard. The full field mapping and evidence are in **[docs/reverse-engineering/linktree.md](docs/reverse-engineering/linktree.md)**.
 
 ---
 
 ## 🪜 How it was built
 
-Each module was built and tested before the next one started. Each has its own commit, and the
-details are in [`docs/PROGRESS.md`](docs/PROGRESS.md).
+Each module was built and tested before the next one started, with its own commits. The details are in
+[`docs/PROGRESS.md`](docs/PROGRESS.md).
 
 ```
 0 Research ─▶ 1 Repo root ─▶ 2 core ─▶ 3 api ─▶ 4 api-client ─▶ 5 web ─▶ 6 mobile ─▶ 7 docs
    REA          workspaces     domain    HTTP     shared client   React    Expo       README
+                                  │
+                                  ▼  platform rebuild
+              8 multi-tenant core ─▶ 9 auth + dashboard API ─▶ 10 client ─▶ 11 web platform ─▶ 12 mobile ─▶ 13 docs
 ```
 
 ## 🗺️ Roadmap
 
-- [ ] Postgres repository (`PgEventRepository` behind the same interface)
-- [ ] User accounts so people can edit their own events and reviews
-- [ ] Image uploads to object storage (the domain already stores links, so only the input changes)
-- [ ] Rate limiting on review and photo endpoints (the client already reads `Retry-After`)
-- [ ] Push reminders before an event starts (Expo Notifications)
-- [ ] `.ics` calendar export, ported from `apps/static`
+- [ ] Postgres repositories behind the same interfaces
+- [ ] Drag-and-drop reordering (the API already takes a full order)
+- [ ] Image uploads to object storage (the domain stores links, so only the input changes)
+- [ ] Password reset by email, and keeping the mobile session in `expo-secure-store`
+- [ ] Rate limiting on sign-up, reviews and photos (the client already reads `Retry-After`)
+- [ ] Scheduled events that appear on a date, like Linktree's `scheduleStart`
+- [ ] Push reminders before an event starts (Expo Notifications) and `.ics` calendar export
 
 ## 📄 License
 
