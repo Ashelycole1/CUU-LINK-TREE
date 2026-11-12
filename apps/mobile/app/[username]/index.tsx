@@ -132,7 +132,7 @@ export default function TreeScreen() {
         renderItem={({ item }) => <EventRow event={item} username={username} onOpen={onOpen} />}
         ListHeaderComponent={header}
         ListEmptyComponent={
-          refreshing ? null : (
+          refreshing ? undefined : (
             <Text style={styles.empty}>{tab === "upcoming" ? "Nothing coming up that matches." : "No past events match."}</Text>
           )
         }

@@ -86,7 +86,7 @@ export default function DashboardScreen() {
             {!!notice && <Text style={styles.notice}>{notice}</Text>}
           </View>
         }
-        ListEmptyComponent={events.loading ? null : <Text style={styles.empty}>No events yet. Add your first one.</Text>}
+        ListEmptyComponent={events.loading ? undefined : <Text style={styles.empty}>No events yet. Add your first one.</Text>}
         renderItem={({ item, index }) => (
           <View style={[styles.card, item.hidden && { backgroundColor: brand.paper2 }]}>
             <View style={styles.reorder}>
