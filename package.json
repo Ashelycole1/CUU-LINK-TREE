@@ -1,0 +1,23 @@
+{
+  "name": "event-tree",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Event Tree: a Linktree-style page for events, with a web app, a mobile app and a shared TypeScript core.",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev:api": "npm run dev -w @event-tree/api",
+    "dev:web": "npm run dev -w @event-tree/web",
+    "dev:mobile": "npm run start -w @event-tree/mobile",
+    "seed": "npm run seed -w @event-tree/api",
+    "test": "npm run test -w @event-tree/core -w @event-tree/api-client -w @event-tree/api",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "build:web": "npm run build -w @event-tree/web"
+  }
+}

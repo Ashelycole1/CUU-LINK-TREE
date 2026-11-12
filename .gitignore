@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/
+coverage/
+.expo/
+web-build/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+
+# API runtime data (seeded locally)
+apps/api/data/*.json
