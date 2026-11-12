@@ -1,0 +1,31 @@
+/* ---------- log in / sign up ---------- */
+.auth-page {
+  min-height: 100vh; display: grid; place-items: center; padding: 32px 16px;
+  background:
+    radial-gradient(circle at 12% 18%, var(--sun) 0 90px, transparent 91px),
+    radial-gradient(circle at 92% 86%, var(--pink) 0 120px, transparent 121px),
+    var(--paper);
+}
+.auth-card {
+  width: min(100%, 460px); padding: 32px; border-radius: var(--r-lg);
+  background: var(--white); border: 2px solid var(--plum); box-shadow: 8px 8px 0 var(--plum);
+}
+.auth-form { display: flex; flex-direction: column; gap: 16px; margin-top: 28px; }
+.auth-form h1 { font-size: 36px; font-weight: 800; }
+.auth-form > p { margin: -6px 0 4px; color: var(--ink-2); }
+
+/* The boxed username field reuses .claim-field; these beat the generic .auth-form label/input rules. */
+.auth-form .claim-field--boxed { flex-direction: row; align-items: center; gap: 0; min-height: 52px; padding: 0 14px; border: 1.5px solid var(--line-strong); }
+.auth-form .claim-field--boxed input { border: 0; min-height: 0; padding: 0; font-weight: 700; box-shadow: none; }
+.auth-form .claim-field--boxed:focus-within { border-color: var(--blue); box-shadow: 0 0 0 3px #3a5cff33; }
+
+.field-status { min-height: 1.5em; margin: -8px 0 0; font-size: 14px; font-weight: 600; color: var(--ink-3); }
+.field-status.ok { color: var(--ok); }
+.field-status.bad { color: var(--danger); }
+.auth-switch { margin: 24px 0 0; text-align: center; color: var(--ink-2); }
+.auth-switch a { font-weight: 700; color: var(--blue-deep); }
+.demo-hint { margin: 20px 0 0; padding: 12px 14px; border-radius: var(--r-sm); background: var(--paper-2); font-size: 13px; color: var(--ink-2); overflow-wrap: anywhere; }
+.demo-hint code { font-size: 12px; color: var(--ink); }
+@media (max-width: 480px) {
+  .auth-card { padding: 24px 20px; box-shadow: 5px 5px 0 var(--plum); }
+}
