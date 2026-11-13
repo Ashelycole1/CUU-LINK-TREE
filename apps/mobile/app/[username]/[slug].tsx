@@ -3,7 +3,7 @@ import { Stack, useLocalSearchParams } from "expo-router";
 import { Format } from "@event-tree/api-client";
 import { Gallery } from "../../src/components/Gallery";
 import { ReviewSection } from "../../src/components/ReviewSection";
-import { api } from "../../src/lib/api";
+import { api, webUrl } from "../../src/lib/api";
 import { useResource } from "../../src/lib/useResource";
 import { StatusBar } from "expo-status-bar";
 import { DEFAULT_THEME, ThemeContext, isDark, tokens } from "../../src/theme";
@@ -37,7 +37,8 @@ export default function EventScreen() {
           headerStyle: { backgroundColor: theme.background },
           headerTintColor: theme.text,
           headerRight: () => (
-            <Pressable onPress={() => Share.share({ message: `${e.title}: ${Format.dateRange(e.startsAt, e.endsAt)}` })} accessibilityLabel="Share this event" hitSlop={10}>
+            <Pressable onPress={() => Share.share({ message: `${e.title}, ${Format.dateRange(e.startsAt, e.endsAt)}
+${webUrl(username, e.slug)}` })} accessibilityLabel="Share this event" hitSlop={10}>
               <Text style={{ color: theme.text, fontSize: 20 }}>↗</Text>
             </Pressable>
           ),
