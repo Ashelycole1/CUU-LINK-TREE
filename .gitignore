@@ -13,3 +13,6 @@ web-build/
 # API runtime data (seeded locally)
 apps/api/data/*.json
 .neon
+
+# Vercel CLI link and build output
+.vercel
