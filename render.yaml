@@ -1,0 +1,27 @@
+# Render Blueprint: one web service that serves the API and the web app on the same origin.
+# The database is Neon (serverless Postgres): https://neon.tech
+#
+# Deploy: Render dashboard → New → Blueprint → pick this repo. Render then asks for:
+#   DATABASE_URL  your Neon connection string (Neon console → Connect → "Pooled connection"),
+#                 e.g. postgresql://user:password@ep-xxx-pooler.region.aws.neon.tech/neondb?sslmode=require
+#   PUBLIC_URL    the https:// address people visit, e.g. https://event-tree.onrender.com
+# Tables are created on first start.
+services:
+  - type: web
+    name: event-tree
+    runtime: node
+    plan: free
+    buildCommand: npm ci --include=dev && npm run build:web
+    startCommand: npm run start:prod
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "20"
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: PUBLIC_URL
+        sync: false
