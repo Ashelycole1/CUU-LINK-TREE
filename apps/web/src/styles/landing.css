@@ -20,7 +20,7 @@
 /* Full-bleed blue behind a centred grid. */
 .hero::before { content: ""; position: absolute; inset: 0 calc(50% - 50vw); z-index: -1; background: var(--blue); }
 .hero-copy { color: var(--paper); }
-.hero h1 { font-size: clamp(46px, 7.2vw, 96px); font-weight: 800; color: var(--sun); letter-spacing: -0.04em; max-width: 11ch; }
+.hero-copy h1 { font-size: clamp(46px, 7.2vw, 96px); font-weight: 800; color: var(--sun); letter-spacing: -0.04em; max-width: 11ch; }
 .hero-copy > p { font-size: 19px; max-width: 46ch; margin: 22px 0 28px; }
 .hero-copy > .hero-note { font-size: 14px; opacity: 0.85; margin: 12px 0 0; }
 .hero-phone { display: flex; justify-content: center; }
@@ -42,6 +42,7 @@
   box-shadow: 14px 16px 0 #2a0f3d40;
 }
 .phone iframe { width: 100%; height: 100%; border: 0; border-radius: 36px; background: var(--paper); display: block; }
+.phone-screen { height: 100%; overflow: hidden; border-radius: 36px; background: var(--paper); }
 .phone-notch { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 84px; height: 22px; border-radius: 12px; background: var(--plum); z-index: 1; }
 
 .band {
