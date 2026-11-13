@@ -2,8 +2,19 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-/** Loads apps/api/.env if it exists (Node 20.12+ built-in, no dotenv package). */
+const here = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Loads local settings with Node's built-in loader (no dotenv package):
+ *
+ *   1. apps/api/.env   your own overrides (PORT, AUTH_SECRET, ...)
+ *   2. .env.local      the Neon variables `neon deploy` / `neon env pull` writes at the repo root
+ *
+ * A variable that is already set is never overwritten, so real environment
+ * variables (Render, Docker) win, then apps/api/.env, then .env.local.
+ */
 export function loadEnv(): void {
-  const file = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../.env");
-  if (existsSync(file)) process.loadEnvFile(file);
+  for (const file of [path.resolve(here, "../.env"), path.resolve(here, "../../../.env.local")]) {
+    if (existsSync(file)) process.loadEnvFile(file);
+  }
 }
