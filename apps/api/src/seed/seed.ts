@@ -1,5 +1,7 @@
 /**
- * Loads the demo hosts in demoData.ts into the JSON store.
+ * Loads the demo hosts in demoData.ts into the local JSON store. For local
+ * development only: it refuses to run in production or against Postgres,
+ * so a live deployment always starts empty.
  *
  *   npm run seed            add the demo data (refuses if accounts exist)
  *   npm run seed -- --force replace all data
@@ -20,6 +22,9 @@ const DAY = 86_400_000;
 async function main() {
   loadEnv();
   const config = Config.fromEnv();
+  if (config.production || config.databaseUrl) {
+    throw new Error("The demo seed is for local development only. Unset NODE_ENV=production and DATABASE_URL to use it.");
+  }
   if (process.argv.includes("--force")) {
     for (const file of DATA_FILES) await fs.rm(path.join(config.dataDir, file), { force: true });
   }
