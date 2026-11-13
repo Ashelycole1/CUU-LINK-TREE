@@ -151,6 +151,8 @@
 .inline-form { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .inline-form input { flex: 1 1 160px; min-width: 0; height: 46px; padding: 0 14px; border: 0; border-radius: 12px; background: var(--glass); color: var(--t-text); }
 .inline-form input::placeholder { color: var(--t-muted); }
+.inline-form input[type="file"] { padding: 11px 14px; font-size: 14px; }
+.inline-form input[type="file"]::file-selector-button { margin-right: 10px; padding: 4px 12px; border: 0; border-radius: 999px; background: var(--t-card); color: var(--t-card-text); font-weight: 700; }
 .tree button.primary { min-height: 46px; padding: 0 20px; border: 0; border-radius: 12px; background: var(--t-card); color: var(--t-card-text); font-weight: 800; }
 .tree button.primary:disabled { opacity: 0.6; }
 .tree .error { color: inherit; font-weight: 700; margin: 8px 0 0; }
