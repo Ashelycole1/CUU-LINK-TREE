@@ -91,13 +91,28 @@ classDiagram
 
 ## Authentication
 
-1. `POST /auth/signup` or `/auth/login` returns `{ token, user }`.
-2. The token is `base64url({ sub, exp })` + `.` + an HMAC-SHA256 signature with `AUTH_SECRET`. It lasts
-   30 days and needs no session table.
-3. The web app keeps it in `localStorage` (`BrowserStore`); the mobile app keeps it in memory.
-   `EventTreeClient` reads it through a `getToken()` callback and sends `Authorization: Bearer`.
-4. `AuthenticatedController.requireUser()` calls `AuthService.authenticate()`, which checks the
-   signature and expiry and loads the user, or throws `UnauthorizedError` (401).
+Accounts live in **Neon Auth** (Managed Better Auth on the Neon branch). We store no passwords.
+
+1. The API mounts a same-origin proxy at `/api/auth` (`authProxy.ts`) in front of `NEON_AUTH_BASE_URL`,
+   so the session cookie is first-party. Neon Auth needs an `Origin` from a trusted domain: browsers
+   send one; for native requests the proxy uses `PUBLIC_URL` (localhost is trusted by default).
+2. **Web:** `@neon/auth` (`createAuthClient("<origin>/api/auth")`) signs up, signs in and out. Its
+   `getSession()` returns the session with a short-lived JWT (15 minutes), cached until it nears expiry.
+3. **Mobile:** `NeonAuthSession` (in `@event-tree/api-client`) calls the same endpoints with
+   `x-auth-transport: session`; the proxy returns the session on the `x-auth-session` header instead of a
+   cookie, and the app keeps it in SecureStore. `token()` fetches `/token` for the JWT.
+4. `EventTreeClient` sends the JWT as `Authorization: Bearer`. `NeonJwtVerifier` checks it against the
+   branch's JWKS (EdDSA, issuer and audience = the Auth URL's origin) and rejects banned users.
+5. A new account has an identity but no page. `POST /auth/claim` picks the username, which creates the
+   `User` (id = the Neon user id) and the profile. Dashboard routes return 403 `PAGE_REQUIRED` until then.
+
+## Images
+
+Uploads go to the private Neon Object Storage bucket `assets` (declared in `neon.ts`). `POST /me/uploads`
+(hosts: avatar, header, posters) and `POST /events/:id/photos` (visitors) take the raw image, check its
+first bytes (JPEG, PNG, GIF or WebP only, no SVG, up to 5 MB) and store it under a random key.
+`GET /media/<key>` streams it back with `immutable` caching, `nosniff` and a locked-down CSP, so the
+database keeps ordinary `https://<PUBLIC_URL>/media/...` links.
 
 ## The web app
 
