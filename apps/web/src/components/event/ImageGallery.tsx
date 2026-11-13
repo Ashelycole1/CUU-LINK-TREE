@@ -1,7 +1,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import { ApiError, type EventDTO, type ImageLinkDTO } from "@event-tree/api-client";
 import { api } from "../../lib/api";
-import { IMAGE_ACCEPT, imageProblem } from "../../lib/upload";
+import { IMAGE_ACCEPT, IMAGE_SIZES, compressImage, imageProblem } from "../../lib/upload";
 
 interface Props {
   event: EventDTO;
@@ -29,12 +29,13 @@ export function ImageGallery({ event, onUpdated }: Props) {
     setError("");
     setBusy(true);
     try {
-      onUpdated(await api.uploadEventPhoto(event.id, file, file.type, caption));
+      const image = await compressImage(file, IMAGE_SIZES.photo);
+      onUpdated(await api.uploadEventPhoto(event.id, image, image.type || file.type, caption));
       setFile(null);
       setCaption("");
       if (picker.current) picker.current.value = "";
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Could not add that photo.");
+      setError(err instanceof ApiError || err instanceof Error ? err.message : "Could not add that photo.");
     } finally {
       setBusy(false);
     }

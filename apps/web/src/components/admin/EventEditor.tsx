@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Icon } from "./Icon";
 import { ImageField } from "../media/ImageField";
+import { IMAGE_SIZES } from "../../lib/upload";
 import { ApiError, type CreateEventInput, type EventDTO, type EventLinkKind } from "@event-tree/api-client";
 
 const KINDS: { id: EventLinkKind; label: string }[] = [
@@ -118,7 +119,7 @@ export function EventEditor({ event, onSave, onCancel }: Props) {
           Description
           <textarea value={form.description} onChange={set("description")} rows={3} maxLength={2000} />
         </label>
-        <ImageField label="Poster image" value={form.coverUrl} onChange={(coverUrl) => setForm((f) => ({ ...f, coverUrl }))} placeholder="Upload, or paste a link (jpg, png or webp)" />
+        <ImageField label="Poster image" maxSide={IMAGE_SIZES.poster} value={form.coverUrl} onChange={(coverUrl) => setForm((f) => ({ ...f, coverUrl }))} placeholder="Upload, or paste a link (jpg, png or webp)" />
         {form.coverUrl && (
           <div className="span-2 poster-row">
             <img src={form.coverUrl} alt="" className="poster-preview" />

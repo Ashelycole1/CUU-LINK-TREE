@@ -12,6 +12,7 @@ import {
 } from "@event-tree/api-client";
 import { api } from "../../lib/api";
 import { ImageField } from "../../components/media/ImageField";
+import { IMAGE_SIZES } from "../../lib/upload";
 import { useResource } from "../../lib/useResource";
 import { FONT_LABELS, FONT_STACKS } from "../../theme/appearance";
 import { useAdmin } from "./AdminLayout";
@@ -133,8 +134,8 @@ export function AppearanceAdmin() {
               <textarea value={draft.bio} onChange={(e) => patch({ bio: e.target.value })} rows={2} maxLength={160} />
               <small className="hint">{draft.bio.length}/160</small>
             </label>
-            <ImageField label="Profile image" value={draft.avatarUrl} onChange={(avatarUrl) => patch({ avatarUrl })} placeholder="Upload, or paste a link" />
-            <ImageField label="Header image" value={draft.heroImageUrl} onChange={(heroImageUrl) => patch({ heroImageUrl })} placeholder="Optional banner behind your name" />
+            <ImageField label="Profile image" maxSide={IMAGE_SIZES.avatar} value={draft.avatarUrl} onChange={(avatarUrl) => patch({ avatarUrl })} placeholder="Upload, or paste a link" />
+            <ImageField label="Header image" maxSide={IMAGE_SIZES.header} value={draft.heroImageUrl} onChange={(heroImageUrl) => patch({ heroImageUrl })} placeholder="Optional banner behind your name" />
           </div>
         </div>
       </section>
