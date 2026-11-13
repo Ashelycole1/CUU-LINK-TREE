@@ -24,8 +24,6 @@
 .field-status.bad { color: var(--danger); }
 .auth-switch { margin: 24px 0 0; text-align: center; color: var(--ink-2); }
 .auth-switch a { font-weight: 700; color: var(--blue-deep); }
-.demo-hint { margin: 20px 0 0; padding: 12px 14px; border-radius: var(--r-sm); background: var(--paper-2); font-size: 13px; color: var(--ink-2); overflow-wrap: anywhere; }
-.demo-hint code { font-size: 12px; color: var(--ink); }
 @media (max-width: 480px) {
   .auth-card { padding: 24px 20px; box-shadow: 5px 5px 0 var(--plum); }
 }

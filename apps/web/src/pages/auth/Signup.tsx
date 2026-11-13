@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError } from "@event-tree/api-client";
 import { useAuth } from "../../auth/AuthContext";
 import { Logo } from "../../components/brand/Logo";
@@ -7,11 +7,15 @@ import { api } from "../../lib/api";
 
 type Availability = { state: "idle" | "checking" | "ok" | "bad"; message?: string };
 
-/** Two steps, like claiming a name on Linktree: pick a username, then create the account. */
+/**
+ * Two steps, like claiming a name on Linktree: pick a username, then create
+ * the account (Neon Auth). Someone already signed in without a page only
+ * needs the first step.
+ */
 export function Signup() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const { signup } = useAuth();
+  const { identity, user, checking, signUp, claim, logout } = useAuth();
   const [step, setStep] = useState<1 | 2>(1);
   const [username, setUsername] = useState(params.get("username") ?? "");
   const [availability, setAvailability] = useState<Availability>({ state: "idle" });
@@ -39,28 +43,34 @@ export function Signup() {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (step === 1) {
+    if (step === 1 && !identity) {
       if (availability.state === "ok") setStep(2);
       return;
     }
     setBusy(true);
     setError("");
     try {
-      await signup({ username, email, password, displayName: displayName || undefined });
+      const name = displayName.trim();
+      // A failed claim after sign-up leaves them signed in; they come back here to pick another name.
+      if (!identity) await signUp({ email, password, name: name || username });
+      await claim({ username, displayName: name || undefined });
       navigate("/admin");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Couldn't create your account.");
+      setError(err instanceof ApiError ? err.message : "Couldn't create your page.");
       if (err instanceof ApiError && err.field === "username") setStep(1);
     } finally {
       setBusy(false);
     }
   }
 
+  if (checking) return <p className="loading-note">Loading…</p>;
+  if (user) return <Navigate to="/admin" replace />;
+
   return (
     <div className="auth-page">
       <div className="auth-card">
         <Logo />
-        {step === 1 ? (
+        {step === 1 || identity ? (
           <form onSubmit={submit} className="auth-form">
             <h1>Claim your page</h1>
             <p>Pick the name people will see in your link. You can't change it later.</p>
@@ -80,8 +90,15 @@ export function Signup() {
             <p id="username-status" className={`field-status ${availability.state}`} aria-live="polite">
               {availability.state === "checking" ? "Checking…" : availability.message}
             </p>
-            <button className="btn btn-dark btn-block" disabled={availability.state !== "ok"}>
-              Continue
+            {identity && (
+              <label>
+                Page name
+                <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="e.g. City Jazz Nights" maxLength={60} />
+              </label>
+            )}
+            {error && <p className="form-error" role="alert">{error}</p>}
+            <button className="btn btn-dark btn-block" disabled={availability.state !== "ok" || busy}>
+              {identity ? (busy ? "Creating your page…" : "Create my page") : "Continue"}
             </button>
           </form>
         ) : (
@@ -112,9 +129,18 @@ export function Signup() {
             </button>
           </form>
         )}
-        <p className="auth-switch">
-          Already have a page? <Link to="/login">Log in</Link>
-        </p>
+        {identity ? (
+          <p className="auth-switch">
+            Signed in as {identity.email}.{" "}
+            <button type="button" className="text-btn" onClick={() => void logout()}>
+              Log out
+            </button>
+          </p>
+        ) : (
+          <p className="auth-switch">
+            Already have a page? <Link to="/login">Log in</Link>
+          </p>
+        )}
       </div>
     </div>
   );

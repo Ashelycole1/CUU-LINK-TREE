@@ -1,55 +1,104 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { ApiError, type LoginInput, type SignupInput, type UserDTO } from "@event-tree/api-client";
-import { api, tokenStore } from "../lib/api";
+import { ApiError, friendlyAuthMessage, type ClaimPageInput, type MeDTO, type UserDTO } from "@event-tree/api-client";
+import { api, authClient } from "../lib/api";
 
 interface AuthState {
+  /** Signed in with Neon Auth. */
+  identity: MeDTO["identity"] | null;
+  /** Their page; null until they claim a username. */
   user: UserDTO | null;
-  /** True until the stored token has been checked on first load. */
+  /** True until the session has been checked on first load. */
   checking: boolean;
-  login: (input: LoginInput) => Promise<UserDTO>;
-  signup: (input: SignupInput) => Promise<UserDTO>;
-  logout: () => void;
+  signIn: (input: { email: string; password: string }) => Promise<MeDTO>;
+  signUp: (input: { email: string; password: string; name: string }) => Promise<MeDTO>;
+  claim: (input: ClaimPageInput) => Promise<UserDTO>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
 
-/** Holds the logged-in host. Validates a stored token once on load and drops it if it has expired. */
+/** Turns a Neon Auth (Better Auth) failure into an ApiError worded for people. */
+function authError(error: unknown, fallback: string): ApiError {
+  const e = (error ?? {}) as { status?: number; code?: string; message?: string; error?: { code?: string; message?: string; status?: number } };
+  const code = e.code ?? e.error?.code;
+  return new ApiError(e.status ?? e.error?.status ?? 0, code ?? "AUTH_ERROR", friendlyAuthMessage(code, e.message ?? e.error?.message ?? fallback));
+}
+
+/** Runs a Neon Auth call, which either throws or returns { error }. */
+async function neon<T extends { error?: unknown }>(call: () => Promise<T>, fallback: string): Promise<T> {
+  let result: T;
+  try {
+    result = await call();
+  } catch (error) {
+    throw authError(error, fallback);
+  }
+  if (result?.error) throw authError(result.error, fallback);
+  return result;
+}
+
+/** Holds the signed-in host. Sign-in is Neon Auth; the page is ours. */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<UserDTO | null>(null);
-  const [checking, setChecking] = useState(() => !!tokenStore.get());
+  const [me, setMe] = useState<MeDTO | null>(null);
+  const [checking, setChecking] = useState(true);
+
+  const refresh = useCallback(async (): Promise<MeDTO | null> => {
+    try {
+      const next = await api.me();
+      setMe(next);
+      return next;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        setMe(null);
+        return null;
+      }
+      throw error;
+    }
+  }, []);
 
   useEffect(() => {
-    if (!tokenStore.get()) return;
-    api
-      .me()
-      .then(setUser)
-      .catch((err: unknown) => {
-        if (err instanceof ApiError && err.status === 401) tokenStore.clear();
-      })
+    refresh()
+      .catch(() => setMe(null))
       .finally(() => setChecking(false));
+  }, [refresh]);
+
+  const afterSignIn = useCallback(async () => {
+    const next = await refresh();
+    if (!next) throw new ApiError(401, "AUTH_ERROR", "Signed in, but the server didn't accept the session. Try again.");
+    return next;
+  }, [refresh]);
+
+  const signIn = useCallback(
+    async (input: { email: string; password: string }) => {
+      await neon(() => authClient.signIn.email(input), "Couldn't log in.");
+      return afterSignIn();
+    },
+    [afterSignIn],
+  );
+
+  const signUp = useCallback(
+    async (input: { email: string; password: string; name: string }) => {
+      await neon(() => authClient.signUp.email(input), "Couldn't create your account.");
+      return afterSignIn();
+    },
+    [afterSignIn],
+  );
+
+  const claim = useCallback(async (input: ClaimPageInput) => {
+    const user = await api.claim(input);
+    setMe((prev) => (prev ? { ...prev, user } : prev));
+    return user;
   }, []);
 
-  const login = useCallback(async (input: LoginInput) => {
-    const session = await api.login(input);
-    tokenStore.set(session.token);
-    setUser(session.user);
-    return session.user;
+  const logout = useCallback(async () => {
+    await authClient.signOut().catch(() => undefined);
+    setMe(null);
   }, []);
 
-  const signup = useCallback(async (input: SignupInput) => {
-    const session = await api.signup(input);
-    tokenStore.set(session.token);
-    setUser(session.user);
-    return session.user;
-  }, []);
-
-  const logout = useCallback(() => {
-    tokenStore.clear();
-    setUser(null);
-  }, []);
-
-  const value = useMemo(() => ({ user, checking, login, signup, logout }), [user, checking, login, signup, logout]);
+  const value = useMemo(
+    () => ({ identity: me?.identity ?? null, user: me?.user ?? null, checking, signIn, signUp, claim, logout }),
+    [me, checking, signIn, signUp, claim, logout],
+  );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
@@ -59,11 +108,12 @@ export function useAuth(): AuthState {
   return value;
 }
 
-/** Sends logged-out visitors to /login and brings them back afterwards. */
+/** Sends signed-out visitors to /login, and people without a page yet to claim one. */
 export function RequireAuth({ children }: { children: ReactNode }) {
-  const { user, checking } = useAuth();
+  const { identity, user, checking } = useAuth();
   const location = useLocation();
   if (checking) return <p className="loading-note">Loading your dashboard…</p>;
-  if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (!identity) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (!user) return <Navigate to="/signup" replace />;
   return <>{children}</>;
 }
