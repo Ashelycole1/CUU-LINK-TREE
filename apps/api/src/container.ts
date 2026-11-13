@@ -25,6 +25,15 @@ import {
   JsonReviewRepository,
   JsonUserRepository,
 } from "./infrastructure/JsonRepositories";
+import {
+  PgAnalyticsRepository,
+  PgEventRepository,
+  PgProfileRepository,
+  PgReviewRepository,
+  PgUserRepository,
+  migrate,
+} from "./infrastructure/PostgresRepositories";
+import pg from "pg";
 
 export interface Repositories {
   users: UserRepository;
@@ -65,16 +74,42 @@ export class Container {
     this.analytics = new AnalyticsService(r.analytics, r.profiles, r.events, clock, ids);
   }
 
-  static fromConfig(config: Config): Container {
-    return new Container(
-      {
-        users: new JsonUserRepository(config.dataDir),
-        profiles: new JsonProfileRepository(config.dataDir),
-        events: new JsonEventRepository(config.dataDir),
-        reviews: new JsonReviewRepository(config.dataDir),
-        analytics: new JsonAnalyticsRepository(config.dataDir),
-      },
-      { hasher: new ScryptPasswordHasher(), tokens: new HmacTokenService(config.authSecret) },
-    );
+  /** Postgres when DATABASE_URL is set (required in production), JSON files otherwise. */
+  static async fromConfig(config: Config): Promise<Container> {
+    const security = { hasher: new ScryptPasswordHasher(), tokens: new HmacTokenService(config.authSecret) };
+    if (!config.databaseUrl) return new Container(Container.jsonRepositories(config.dataDir), security);
+
+    const pool = new pg.Pool({
+      connectionString: config.databaseUrl,
+      // Neon (and other hosted Postgres) needs TLS; local servers usually don't.
+      ssl: /localhost|127\.0\.0\.1/.test(config.databaseUrl) ? undefined : { rejectUnauthorized: false },
+      max: 10,
+      idleTimeoutMillis: 30_000,
+    });
+    // Neon suspends idle databases and drops their connections. The pool
+    // replaces them on the next query; without this listener Node would crash.
+    pool.on("error", (error) => console.warn("Postgres connection dropped:", error.message));
+    await migrate(pool);
+    return new Container(Container.pgRepositories(pool), security);
+  }
+
+  static jsonRepositories(dataDir: string): Repositories {
+    return {
+      users: new JsonUserRepository(dataDir),
+      profiles: new JsonProfileRepository(dataDir),
+      events: new JsonEventRepository(dataDir),
+      reviews: new JsonReviewRepository(dataDir),
+      analytics: new JsonAnalyticsRepository(dataDir),
+    };
+  }
+
+  static pgRepositories(pool: pg.Pool): Repositories {
+    return {
+      users: new PgUserRepository(pool),
+      profiles: new PgProfileRepository(pool),
+      events: new PgEventRepository(pool),
+      reviews: new PgReviewRepository(pool),
+      analytics: new PgAnalyticsRepository(pool),
+    };
   }
 }

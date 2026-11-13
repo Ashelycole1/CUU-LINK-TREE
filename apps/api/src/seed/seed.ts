@@ -24,7 +24,7 @@ async function main() {
     for (const file of DATA_FILES) await fs.rm(path.join(config.dataDir, file), { force: true });
   }
 
-  const c = Container.fromConfig(config);
+  const c = await Container.fromConfig(config);
   if (await c.repositories.users.findByUsername(DEMO_HOSTS[0]!.username)) {
     console.log(`Demo data already exists in ${config.dataDir}. Run "npm run seed -- --force" to replace it.`);
     return;
