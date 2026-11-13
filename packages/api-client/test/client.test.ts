@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ApiError, EventTreeClient, Format, type FetchLike } from "../src";
+import { ApiError, EventTreeClient, Format, NeonAuthSession, type FetchLike, type SessionStore } from "../src";
 
 function fakeFetch(status: number, body: unknown, headers: Record<string, string> = {}) {
   const calls: { url: string; init?: RequestInit }[] = [];
@@ -29,6 +29,19 @@ describe("EventTreeClient", () => {
     expect(JSON.parse(String(calls[0]!.init?.body))).toEqual({ authorName: "A", rating: 5 });
   });
 
+  it("awaits an async getToken and uploads raw image bytes with their type", async () => {
+    const { fetch, calls } = fakeFetch(201, { url: "https://x/media/u/1/a.png" });
+    const client = new EventTreeClient({ baseUrl: "http://api.test", fetch, getToken: async () => "jwt" });
+    const bytes = new Uint8Array([1, 2, 3]);
+    expect(await client.uploadImage(bytes, "image/png")).toEqual({ url: "https://x/media/u/1/a.png" });
+    expect(calls[0]!.url).toBe("http://api.test/api/v1/me/uploads");
+    expect(calls[0]!.init?.headers).toMatchObject({ "content-type": "image/png", authorization: "Bearer jwt" });
+    expect(calls[0]!.init?.body).toBe(bytes);
+
+    await client.uploadEventPhoto("e1", bytes, "image/jpeg", "  Front row ");
+    expect(calls[1]!.url).toBe("http://api.test/api/v1/events/e1/photos?caption=Front%20row");
+  });
+
   it("turns error bodies into ApiError with field and Retry-After", async () => {
     const { fetch } = fakeFetch(429, { error: { code: "RATE_LIMIT", message: "Slow down", field: "x" } }, { "retry-after": "30" });
     const client = new EventTreeClient({ baseUrl: "http://api.test", fetch });
@@ -46,6 +59,61 @@ describe("EventTreeClient", () => {
     });
     const error = (await client.getMyProfile().catch((e: unknown) => e)) as ApiError;
     expect(error.isNetwork).toBe(true);
+  });
+});
+
+describe("NeonAuthSession", () => {
+  function memoryStore(initial: string | null = null): SessionStore & { value: string | null } {
+    const store = {
+      value: initial,
+      load: async () => store.value,
+      save: async (v: string | null) => {
+        store.value = v;
+      },
+    };
+    return store;
+  }
+  const jwt = (exp: number) => `h.${btoa(JSON.stringify({ exp })).replace(/=+$/, "")}.s`;
+
+  it("keeps the session from the proxy header and sends it back", async () => {
+    const calls: { url: string; init?: RequestInit }[] = [];
+    const store = memoryStore();
+    const auth = new NeonAuthSession({
+      baseUrl: "http://api.test/",
+      store,
+      fetch: async (url, init) => {
+        calls.push({ url, init });
+        if (url.endsWith("/sign-in/email"))
+          return new Response(JSON.stringify({ user: { id: "u1", email: "a@b.c", name: "A" } }), { headers: { "x-auth-session": "sess.1" } });
+        return new Response(JSON.stringify({ token: jwt(Date.now() / 1000 + 900) }));
+      },
+    });
+
+    expect(await auth.signIn({ email: "a@b.c", password: "pw" })).toMatchObject({ id: "u1" });
+    expect(calls[0]!.url).toBe("http://api.test/api/auth/sign-in/email");
+    expect(calls[0]!.init?.headers).toMatchObject({ "x-auth-transport": "session" });
+    expect(store.value).toBe("sess.1");
+
+    const token = await auth.token();
+    expect(calls[1]!.init?.headers).toMatchObject({ "x-auth-session": "sess.1" });
+    expect(await auth.token()).toBe(token);
+    expect(calls).toHaveLength(2); // cached until it nears expiry
+  });
+
+  it("returns null and forgets the session when Neon Auth rejects it", async () => {
+    const store = memoryStore("stale");
+    const auth = new NeonAuthSession({ baseUrl: "http://api.test", store, fetch: async () => new Response("{}", { status: 401 }) });
+    expect(await auth.token()).toBeNull();
+    expect(store.value).toBeNull();
+  });
+
+  it("words Better Auth errors for people", async () => {
+    const auth = new NeonAuthSession({
+      baseUrl: "http://api.test",
+      store: memoryStore(),
+      fetch: async () => new Response(JSON.stringify({ code: "INVALID_EMAIL_OR_PASSWORD", message: "Invalid" }), { status: 401 }),
+    });
+    await expect(auth.signIn({ email: "a@b.c", password: "x" })).rejects.toMatchObject({ status: 401, message: "That email and password don't match." });
   });
 });
 

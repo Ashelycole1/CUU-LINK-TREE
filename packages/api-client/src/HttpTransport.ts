@@ -5,8 +5,8 @@ export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>
 export interface TransportOptions {
   baseUrl: string;
   fetch?: FetchLike;
-  /** Returns the session token to send as `Authorization: Bearer`, or null when logged out. Read on every request. */
-  getToken?: () => string | null | undefined;
+  /** Returns the Neon Auth JWT to send as `Authorization: Bearer`, or null when signed out. Read on every request. */
+  getToken?: () => string | null | undefined | Promise<string | null | undefined>;
   timeoutMs?: number;
 }
 
@@ -43,22 +43,30 @@ export class HttpTransport {
     return this.request<void>("DELETE", path);
   }
 
+  /** Sends a file as the raw request body (uploads), with its own content type. */
+  upload<T>(path: string, file: Blob | ArrayBuffer | Uint8Array, contentType: string, query?: Record<string, string | undefined>): Promise<T> {
+    return this.request<T>("POST", path + toQueryString(query), { raw: file, contentType });
+  }
+
   private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.options.timeoutMs ?? 15_000);
     const headers: Record<string, string> = { accept: "application/json" };
-    if (body !== undefined) headers["content-type"] = "application/json";
-    const token = this.options.getToken?.();
+    let requestBody: BodyInit | undefined;
+    if (isRaw(body)) {
+      headers["content-type"] = body.contentType;
+      requestBody = body.raw as BodyInit;
+    } else if (body !== undefined) {
+      headers["content-type"] = "application/json";
+      requestBody = JSON.stringify(body);
+    }
+    const token = await this.options.getToken?.();
     if (token) headers.authorization = `Bearer ${token}`;
 
+    // Uploads get longer: a 5 MB photo on a phone connection takes a while.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), (this.options.timeoutMs ?? 15_000) * (isRaw(body) ? 4 : 1));
     let res: Response;
     try {
-      res = await this.fetchImpl(`${this.baseUrl}${path}`, {
-        method,
-        headers,
-        body: body === undefined ? undefined : JSON.stringify(body),
-        signal: controller.signal,
-      });
+      res = await this.fetchImpl(`${this.baseUrl}${path}`, { method, headers, body: requestBody, signal: controller.signal });
     } catch (error) {
       const aborted = (error as Error)?.name === "AbortError";
       throw new ApiError(0, aborted ? "TIMEOUT" : "NETWORK", aborted ? "The server took too long to answer." : "Could not reach the server.");
@@ -81,6 +89,15 @@ export class HttpTransport {
     }
     return payload as T;
   }
+}
+
+interface RawBody {
+  raw: Blob | ArrayBuffer | Uint8Array;
+  contentType: string;
+}
+
+function isRaw(body: unknown): body is RawBody {
+  return typeof body === "object" && body !== null && "raw" in body && "contentType" in body;
 }
 
 function toQueryString(query?: Record<string, string | number | undefined>): string {
