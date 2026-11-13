@@ -4,7 +4,11 @@
 # Deploy: Render dashboard → New → Blueprint → pick this repo. Render then asks for:
 #   DATABASE_URL           pooled Neon connection string  } both are in .env.local after
 #   DATABASE_URL_UNPOOLED  direct Neon connection string  } `neon deploy` / `neon env pull`
+#   NEON_AUTH_BASE_URL, NEON_AUTH_JWKS_URL                     Neon Auth (sign-in)
+#   AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_ENDPOINT_URL_S3, AWS_REGION   Neon Object Storage
 #   PUBLIC_URL    the https:// address people visit, e.g. https://event-tree.onrender.com
+# Copy the Neon values from the production branch's .env.local (never commit them).
+# Before the first sign-in, trust the address in Neon Auth:  neon neon-auth domain add <PUBLIC_URL>
 # Tables are created on first start.
 services:
   - type: web
@@ -19,11 +23,21 @@ services:
         value: production
       - key: NODE_VERSION
         value: "20"
-      - key: AUTH_SECRET
-        generateValue: true
       - key: DATABASE_URL
         sync: false
       - key: DATABASE_URL_UNPOOLED
+        sync: false
+      - key: NEON_AUTH_BASE_URL
+        sync: false
+      - key: NEON_AUTH_JWKS_URL
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_ENDPOINT_URL_S3
+        sync: false
+      - key: AWS_REGION
         sync: false
       - key: PUBLIC_URL
         sync: false
