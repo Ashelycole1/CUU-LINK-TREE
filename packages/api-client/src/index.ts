@@ -1,4 +1,5 @@
-export { EventTreeClient } from "./EventTreeClient";
+export { EventTreeClient, type ImageBody } from "./EventTreeClient";
+export { NeonAuthSession, friendlyAuthMessage, type AuthUser, type SessionStore } from "./NeonAuthSession";
 export { HttpTransport, type FetchLike, type TransportOptions } from "./HttpTransport";
 export { ApiError } from "./ApiError";
 export { Format } from "./format";
@@ -9,15 +10,15 @@ export type {
   AnalyticsDayDTO,
   AnalyticsSummaryDTO,
   AppearanceDTO,
-  AuthSessionDTO,
+  ClaimPageInput,
   ButtonStyle,
   FontChoice,
-  LoginInput,
-  SignupInput,
+  MeDTO,
   ThemeColors,
   ThemePreset,
   TreeDTO,
   UpdateProfileInput,
+  UploadDTO,
   UserDTO,
   CreateEventInput,
   CreateReviewInput,

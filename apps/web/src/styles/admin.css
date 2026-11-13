@@ -94,6 +94,11 @@
 /* ---------- event editor ---------- */
 .editor { display: flex; flex-direction: column; gap: 18px; }
 .editor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+/* An image link with an Upload button beside it. */
+.image-field { display: grid; gap: 6px; }
+.image-field-row { display: flex; gap: 8px; }
+.image-field-row input[type="url"] { flex: 1; min-width: 0; }
+.image-field-row .btn { min-height: 44px; padding: 0 16px; }
 .span-2 { grid-column: span 2; }
 .poster-row { display: flex; gap: 14px; align-items: flex-end; }
 .poster-row label { flex: 1; }

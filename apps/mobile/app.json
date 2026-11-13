@@ -7,9 +7,27 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "backgroundColor": "#fffaf2",
-    "ios": { "supportsTablet": true, "bundleIdentifier": "app.eventtree.mobile" },
-    "android": { "package": "app.eventtree.mobile" },
-    "plugins": ["expo-router"],
-    "experiments": { "typedRoutes": false }
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.eventtree.mobile"
+    },
+    "android": {
+      "package": "app.eventtree.mobile"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Event Tree uses your photos so you can add posters, profile pictures and event photos.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false
+    }
   }
 }

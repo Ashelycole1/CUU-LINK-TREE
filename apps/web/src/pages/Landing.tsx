@@ -1,13 +1,15 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { ClaimForm } from "../components/brand/ClaimForm";
 import { Logo } from "../components/brand/Logo";
 import { PhoneFrame } from "../components/brand/PhoneFrame";
 import { EventTicket } from "../components/tree/EventTicket";
-import { api } from "../lib/api";
-import { useResource } from "../lib/useResource";
+import { TreeView } from "../components/tree/TreeView";
+import { samplePage } from "../content/samplePage";
 
-const DEMOS = [
+/** Seeded local accounts (npm run seed). Production starts empty, so these only show in development. */
+const DEMOS = !import.meta.env.DEV ? [] : [
   { username: "buildersmeetup", name: "Builders Meetup", what: "Talks, hack weekends, career nights", tone: "blue" },
   { username: "nightandsong", name: "Night & Song", what: "Live music and late-night culture", tone: "plum" },
   { username: "sunrisesports", name: "Sunrise Sports Club", what: "Fun runs and finals days", tone: "pink" },
@@ -16,8 +18,8 @@ const DEMOS = [
 /** The marketing home page: claim a name, see a live page, learn what a host gets. */
 export function Landing() {
   const { user } = useAuth();
-  const sample = useResource(() => api.getPage("nightandsong"), []);
-  const sampleTickets = sample.data ? [...sample.data.upcoming, ...sample.data.past].slice(0, 3) : [];
+  const [sample] = useState(samplePage);
+  const sampleTickets = [...sample.upcoming.slice(0, 2), ...sample.past.slice(0, 1)];
 
   return (
     <div className="landing">
@@ -25,7 +27,7 @@ export function Landing() {
         <Logo />
         <div className="site-nav-links">
           <a href="#how">How it works</a>
-          <a href="#examples">Examples</a>
+          {DEMOS.length > 0 && <a href="#examples">Examples</a>}
         </div>
         <div className="site-nav-actions">
           {user ? (
@@ -56,7 +58,9 @@ export function Landing() {
           <p className="hero-note">Free. Takes a minute. No app to install.</p>
         </div>
         <div className="hero-phone">
-          <PhoneFrame username="buildersmeetup" title="A live Event Tree page" />
+          <PhoneFrame title="An example Event Tree page: a host's name, bio and social links, then one button per event">
+            <TreeView tree={sample} preview />
+          </PhoneFrame>
         </div>
       </header>
 
@@ -68,9 +72,9 @@ export function Landing() {
             tickets, sign-ups, slides or a livestream. Hide an event with one switch while you finish it.
           </p>
         </div>
-        <div className="band-visual ticket-stack" style={{ "--t-card": "#fffaf2", "--t-card-text": "#2a0f3d", "--t-accent": "#ff3d7f" } as React.CSSProperties}>
+        <div className="band-visual ticket-stack" inert style={{ "--t-card": "#fffaf2", "--t-card-text": "#2a0f3d", "--t-accent": "#ff3d7f" } as React.CSSProperties}>
           {sampleTickets.map((e) => (
-            <EventTicket key={e.id} event={e} username="nightandsong" buttonStyle="ticket" />
+            <EventTicket key={e.id} event={e} username={sample.profile.username} buttonStyle="ticket" />
           ))}
         </div>
       </section>
@@ -79,8 +83,8 @@ export function Landing() {
         <div className="band-copy">
           <h2>Upcoming and past sort themselves.</h2>
           <p>
-            The moment an event ends it moves to Past. Visitors see a countdown on what's next and a full archive of what
-            happened, without you editing anything.
+            The moment an event ends it moves to Past events at the foot of your page, with its photos and reviews. Each
+            event page counts down to the start. You never edit a thing.
           </p>
         </div>
         <div className="band-visual switch-demo" aria-hidden="true">
@@ -117,6 +121,7 @@ export function Landing() {
         </div>
       </section>
 
+      {DEMOS.length > 0 && (
       <section id="examples" className="examples">
         <h2>See it in use</h2>
         <div className="example-grid">
@@ -129,6 +134,7 @@ export function Landing() {
           ))}
         </div>
       </section>
+      )}
 
       <section className="final-cta">
         <h2>Your next event needs a link.</h2>

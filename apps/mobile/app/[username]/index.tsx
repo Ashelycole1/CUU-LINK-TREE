@@ -1,166 +1,170 @@
-import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Image, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import type { EventDTO } from "@event-tree/api-client";
+import type { EventDTO, SocialLinkDTO } from "@event-tree/api-client";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { EventRow } from "../../src/components/EventRow";
-import { NextUpCard } from "../../src/components/NextUpCard";
-import { Chip, PillSwitch } from "../../src/components/Pill";
+import { StatusBar } from "expo-status-bar";
+import { LinkButton } from "../../src/components/LinkButton";
 import { api } from "../../src/lib/api";
 import { useResource } from "../../src/lib/useResource";
-import { StatusBar } from "expo-status-bar";
 import { DEFAULT_THEME, ThemeContext, isDark, tokens } from "../../src/theme";
 
-type Tab = "upcoming" | "past";
+const SOCIAL_LABELS: Record<SocialLinkDTO["platform"], string> = {
+  instagram: "IG",
+  x: "X",
+  linkedin: "in",
+  whatsapp: "WA",
+  youtube: "YT",
+  tiktok: "TT",
+  facebook: "f",
+  website: "🌐",
+};
 
-/** A host page at /:username: header, Next up, Upcoming/Past switch, search, chips and event rows. */
+/** A host page at /:username, laid out like Linktree: avatar, name, bio, socials, then one button per event. */
 export default function TreeScreen() {
   const { username = "" } = useLocalSearchParams<{ username: string }>();
-  const [tab, setTab] = useState<Tab>("upcoming");
-  const [category, setCategory] = useState("");
-  const [query, setQuery] = useState("");
+  const [showPast, setShowPast] = useState(false);
 
   const page = useResource(() => api.getPage(username), [username]);
   const theme = page.data?.profile.appearance.colors ?? DEFAULT_THEME;
+  const buttonStyle = page.data?.profile.appearance.buttonStyle ?? "pill";
 
   useEffect(() => {
     if (page.data) void api.recordView(username).catch(() => undefined);
   }, [page.data?.profile.ownerId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const onOpen = (event: EventDTO) => void api.recordClick(event.id).catch(() => undefined);
-
-  // Both lists are already loaded, so filtering locally keeps typing instant on a phone.
-  const visible = useMemo(() => {
-    const source = (tab === "upcoming" ? page.data?.upcoming : page.data?.past) ?? [];
-    const q = query.trim().toLowerCase();
-    return source.filter(
-      (e) =>
-        (!category || e.category === category) &&
-        (!q || [e.title, e.description, e.venue, e.organizer, e.category].some((v) => v.toLowerCase().includes(q))),
-    );
-  }, [tab, page.data, category, query]);
+  const open = (event: EventDTO) => {
+    void api.recordClick(event.id).catch(() => undefined);
+    router.push(`/${username}/${event.slug}`);
+  };
 
   const upcoming = page.data?.upcoming ?? [];
   const past = page.data?.past ?? [];
-  const refreshing = page.loading;
-  const error = page.error;
   const p = page.data?.profile;
+  const photo = p?.avatarUrl || p?.heroImageUrl;
   const initials = (p?.displayName ?? "")
-    .split(/s+/)
-    .map((w) => w[0])
+    .split(/\s+/)
+    .map((w) => w[0] ?? "")
     .join("")
     .slice(0, 2)
     .toUpperCase();
+  const muted = isDark(theme.background) ? tokens.muted : "rgba(0,0,0,0.6)";
 
-  const header = (
-    <View>
-      {p?.heroImageUrl ? (
-        <Image source={{ uri: p.heroImageUrl }} style={styles.hero} resizeMode="cover" />
-      ) : (
-        <View style={[styles.avatar, { backgroundColor: theme.card }]}>
-          {p?.avatarUrl ? (
-            <Image source={{ uri: p.avatarUrl }} style={StyleSheet.absoluteFill} />
-          ) : (
-            <Text style={[styles.avatarText, { color: theme.cardText }]}>{initials}</Text>
-          )}
-        </View>
-      )}
-      <Text style={[styles.name, { color: theme.text }]}>{p?.displayName ?? " "}</Text>
-      <Text style={styles.handle}>@{username}</Text>
-      {!!p?.bio && <Text style={[styles.bio, { color: theme.text }]}>{p.bio}</Text>}
-      <View style={styles.pill}>
-        <View style={[styles.dot, { backgroundColor: theme.accent }]} />
-        <Text style={styles.pillText}>{upcoming.length} upcoming</Text>
-      </View>
-
-      {upcoming.length > 0 && (
-        <>
-          <Text style={styles.head}>Next up</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={278} decelerationRate="fast">
-            {upcoming.slice(0, 3).map((e) => (
-              <NextUpCard key={e.id} event={e} username={username} onOpen={onOpen} />
-            ))}
-          </ScrollView>
-        </>
-      )}
-
-      <PillSwitch
-        value={tab}
-        onChange={setTab}
-        options={[
-          { id: "upcoming", label: "Upcoming", count: upcoming.length },
-          { id: "past", label: "Past", count: past.length },
-        ]}
-      />
-      <TextInput
-        style={styles.search}
-        placeholder="Search events"
-        placeholderTextColor={tokens.muted}
-        value={query}
-        onChangeText={setQuery}
-        accessibilityLabel="Search events"
-      />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 18 }}>
-        {["", ...(page.data?.categories ?? [])].map((c) => (
-          <Chip key={c || "all"} label={c || "All"} active={category === c} onPress={() => setCategory(c)} />
-        ))}
-      </ScrollView>
-      {error && <Text style={styles.error}>{error.message}</Text>}
-      {refreshing && !page.data && <ActivityIndicator color={theme.text} />}
-    </View>
-  );
-
-  if (error?.isNotFound) {
+  if (page.error?.isNotFound) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.background, alignItems: "center", justifyContent: "center", padding: 24 }}>
-        <Text style={styles.name}>Nothing here</Text>
-        <Text style={styles.bio}>There is no Event Tree at /{username} yet.</Text>
-        <Pressable onPress={() => router.replace("/")} style={styles.cta} accessibilityRole="button">
-          <Text style={styles.ctaText}>Go home</Text>
+      <SafeAreaView style={[styles.center, { backgroundColor: theme.background }]}>
+        <Text style={[styles.name, { color: theme.text }]}>Nothing here</Text>
+        <Text style={[styles.bio, { color: theme.text }]}>There is no Event Tree at /{username} yet.</Text>
+        <Pressable onPress={() => router.replace("/")} style={[styles.footer, { borderColor: muted }]} accessibilityRole="button">
+          <Text style={[styles.footerText, { color: theme.text }]}>Go home</Text>
         </Pressable>
       </SafeAreaView>
     );
   }
 
+  const eventButton = (e: EventDTO, dimmed = false) => (
+    <LinkButton
+      key={e.id}
+      label={e.title}
+      variant={buttonStyle}
+      dimmed={dimmed}
+      onPress={() => open(e)}
+      accessibilityLabel={`${e.title}, ${new Date(e.startsAt).toDateString()}`}
+      leading={e.status === "live" ? <View style={[styles.liveDot, { backgroundColor: tokens.live }]} /> : undefined}
+    />
+  );
+
   return (
     <ThemeContext.Provider value={theme}>
-    <StatusBar style={isDark(theme.background) ? "light" : "dark"} />
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={["top"]}>
-      <FlatList
-        data={visible}
-        keyExtractor={(e) => e.id}
-        renderItem={({ item }) => <EventRow event={item} username={username} onOpen={onOpen} />}
-        ListHeaderComponent={header}
-        ListEmptyComponent={
-          refreshing ? null : (
-            <Text style={styles.empty}>{tab === "upcoming" ? "Nothing coming up that matches." : "No past events match."}</Text>
-          )
-        }
-        ListFooterComponent={<Text style={styles.footer}>Made with Event Tree</Text>}
-        contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={false} onRefresh={page.reload} tintColor="#fff" />}
-      />
-    </SafeAreaView>
+      <StatusBar style={isDark(theme.background) ? "light" : "dark"} />
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={["top"]}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          refreshControl={<RefreshControl refreshing={false} onRefresh={page.reload} tintColor={theme.text} />}
+        >
+          <View style={styles.column}>
+            <View style={[styles.avatar, { backgroundColor: theme.card }]}>
+              {photo ? (
+                <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+              ) : (
+                <Text style={[styles.avatarText, { color: theme.cardText }]}>{initials}</Text>
+              )}
+            </View>
+            <Text style={[styles.name, { color: theme.text }]}>{p?.displayName ?? " "}</Text>
+            <Text style={[styles.handle, { color: muted }]}>@{username}</Text>
+            {!!p?.bio && <Text style={[styles.bio, { color: theme.text }]}>{p.bio}</Text>}
+
+            {!!p?.socials.length && (
+              <View style={styles.socials}>
+                {p.socials.map((s) => (
+                  <Pressable
+                    key={s.platform}
+                    onPress={() => void Linking.openURL(s.url)}
+                    accessibilityRole="link"
+                    accessibilityLabel={s.platform}
+                    hitSlop={6}
+                    style={({ pressed }) => [styles.social, { borderColor: theme.text, opacity: pressed ? 0.6 : 1 }]}
+                  >
+                    <Text style={[styles.socialText, { color: theme.text }]}>{SOCIAL_LABELS[s.platform]}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+
+            <View style={styles.links}>
+              {page.loading && !page.data && <ActivityIndicator color={theme.text} style={{ marginTop: 24 }} />}
+              {!!page.error && <Text style={styles.error}>{page.error.message}</Text>}
+
+              {upcoming.map((e) => eventButton(e))}
+              {page.data && upcoming.length === 0 && (
+                <Text style={[styles.empty, { color: muted }]}>No upcoming events yet.</Text>
+              )}
+
+              {past.length > 0 && (
+                <>
+                  <Pressable
+                    onPress={() => setShowPast((v) => !v)}
+                    accessibilityRole="button"
+                    accessibilityState={{ expanded: showPast }}
+                    style={styles.pastToggle}
+                  >
+                    <Text style={[styles.pastToggleText, { color: theme.text }]}>
+                      {showPast ? "Hide past events" : `Past events (${past.length})`}  {showPast ? "▴" : "▾"}
+                    </Text>
+                  </Pressable>
+                  {showPast && past.map((e) => eventButton(e, true))}
+                </>
+              )}
+            </View>
+
+            <Pressable onPress={() => router.push("/")} style={[styles.footer, { borderColor: muted }]} accessibilityRole="link">
+              <Text style={[styles.footerText, { color: theme.text }]}>Event Tree</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
     </ThemeContext.Provider>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: tokens.gutter, paddingBottom: 48 },
-  hero: { width: "100%", aspectRatio: 1160 / 518, marginTop: 8 },
-  avatar: { width: 96, height: 96, borderRadius: 48, overflow: "hidden", alignSelf: "center", marginTop: 24, alignItems: "center", justifyContent: "center" },
-  avatarText: { fontSize: 26, fontWeight: "700" },
-  name: { color: "#fff", fontSize: 24, fontWeight: "600", textAlign: "center", marginTop: 12 },
-  handle: { color: tokens.muted, fontSize: 14, textAlign: "center" },
-  bio: { color: "#fff", fontSize: 16, fontWeight: "500", textAlign: "center", marginTop: 6, lineHeight: 24 },
-  pill: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "center", height: 24, paddingHorizontal: 8, borderRadius: 8, backgroundColor: tokens.glass, marginTop: 14 },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  pillText: { color: "#fff", fontSize: 12 },
-  head: { color: "#fff", fontSize: 14, fontWeight: "700", textAlign: "center", marginTop: 28, marginBottom: 14 },
-  search: { height: 48, borderRadius: tokens.radiusPill, backgroundColor: tokens.glass, color: "#fff", paddingHorizontal: 20, fontSize: 14, marginTop: 20, marginBottom: 10 },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
+  content: { paddingHorizontal: tokens.gutter, paddingTop: 40, paddingBottom: 48 },
+  column: { width: "100%", maxWidth: 580, alignSelf: "center", alignItems: "center" },
+  avatar: { width: 96, height: 96, borderRadius: 48, overflow: "hidden", alignItems: "center", justifyContent: "center" },
+  avatarText: { fontSize: 32, fontWeight: "700" },
+  name: { fontSize: 22, fontWeight: "700", textAlign: "center", marginTop: 16 },
+  handle: { fontSize: 14, textAlign: "center", marginTop: 2 },
+  bio: { fontSize: 15, textAlign: "center", marginTop: 10, lineHeight: 22, paddingHorizontal: 8 },
+  socials: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 12, marginTop: 18 },
+  social: { width: 40, height: 40, borderRadius: 20, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
+  socialText: { fontSize: 14, fontWeight: "700" },
+  links: { alignSelf: "stretch", marginTop: 32 },
+  liveDot: { width: 8, height: 8, borderRadius: 4 },
+  empty: { textAlign: "center", paddingVertical: 16 },
   error: { color: tokens.danger, textAlign: "center", marginBottom: 12 },
-  empty: { color: tokens.muted, textAlign: "center", paddingVertical: 32 },
-  cta: { alignSelf: "center", marginTop: 14, paddingVertical: 12, paddingHorizontal: 22, borderRadius: tokens.radiusPill, borderWidth: 2, borderStyle: "dashed", borderColor: tokens.muted },
-  ctaText: { color: "#fff", fontWeight: "600" },
-  footer: { color: tokens.muted, textAlign: "center", marginTop: 32, fontSize: 13, fontWeight: "600" },
+  pastToggle: { alignSelf: "center", paddingVertical: 12, paddingHorizontal: 16, marginTop: 4, marginBottom: 10 },
+  pastToggleText: { fontSize: 15, fontWeight: "600" },
+  footer: { marginTop: 36, paddingVertical: 8, paddingHorizontal: 16, borderRadius: tokens.radiusPill, borderWidth: 1 },
+  footerText: { fontSize: 13, fontWeight: "700" },
 });

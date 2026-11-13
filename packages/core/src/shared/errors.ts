@@ -69,3 +69,12 @@ export class ForbiddenError extends DomainError {
     super(message);
   }
 }
+
+/** Signed in with Neon Auth, but no username (and so no page) has been claimed yet. */
+export class PageRequiredError extends DomainError {
+  readonly code = "PAGE_REQUIRED";
+
+  constructor(message = "Choose a username to create your page first.") {
+    super(message);
+  }
+}

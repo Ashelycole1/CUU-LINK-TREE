@@ -147,7 +147,7 @@ event-tree/
 ├── apps/
 │   ├── api/                              Express REST API
 │   │   ├── src/
-│   │   │   ├── config.ts                 typed env config (AUTH_SECRET, CORS, data dir)
+│   │   │   ├── config.ts                 typed env config (Neon, CORS, data dir)
 │   │   │   ├── container.ts              composition root (dependency injection)
 │   │   │   ├── server.ts                 entry point
 │   │   │   ├── http/
@@ -232,59 +232,77 @@ event-tree/
 
 ```bash
 npm install            # installs every workspace
-npm run seed           # 3 demo hosts with events, reviews and 30 days of sample analytics
+npm run seed           # local only: 3 demo hosts with events, reviews and 30 days of sample analytics
 npm run dev:api        # http://localhost:4000/api/v1
 npm run dev:web        # http://localhost:5173  (second terminal)
 npm run dev:mobile     # Expo dev server; press i / a, or scan the QR code with Expo Go
 ```
 
-Then open **http://localhost:5173**, claim a name, or log in as a demo host:
+Then open **http://localhost:5173** and claim a name. Sign-up and log-in go through **Neon Auth**, so they need the Neon variables in `.env.local` (see Deploying). The seed adds three demo pages to browse:
 
-| Page | Log in with | Password |
-|---|---|---|
-| `/buildersmeetup` (Stage blue theme) | `buildersmeetup@demo.eventtree.test` | `demo-password` |
-| `/nightandsong` (Aubergine theme) | `nightandsong@demo.eventtree.test` | `demo-password` |
-| `/sunrisesports` (Wristband theme) | `sunrisesports@demo.eventtree.test` | `demo-password` |
+| Page | Theme |
+|---|---|
+| `/buildersmeetup` | Stage blue |
+| `/nightandsong` | Aubergine |
+| `/sunrisesports` | Wristband |
 
-These accounts exist only in your local `apps/api/data/` folder.
+Nobody can log in to them: they have no Neon Auth account. They exist only in your local `apps/api/data/` folder. The seed refuses to run in production or against Postgres, and the demo shortcuts on the landing, log-in and mobile home screens only appear in development builds, so a live deployment starts empty.
 
 | Command | What it does |
 |---|---|
 | `npm test` | Runs the core, api-client and API test suites |
 | `npm run typecheck` | Runs `tsc` in every workspace |
-| `npm run build:web` | Production build to `apps/web/dist` |
+| `npm run build:web` | Production build to `apps/web/dist` (the API serves it when present) |
+| `npm run start:prod` | Starts the server: API plus the built web app on one origin |
 | `npm run seed -- --force` | Wipes the data and re-seeds |
 
 ### Configuration
 
 | File | Variable | Default | Purpose |
 |---|---|---|---|
-| `apps/api/.env` | `PORT` | `4000` | API port |
-| | `PUBLIC_URL` | `http://localhost:4000` | Used to build poster links when seeding |
-| | `AUTH_SECRET` | dev fallback | Signs login tokens. **Required** when `NODE_ENV=production`; the API refuses to start without it |
-| | `DATA_DIR` | `./data` | Where the JSON files live |
-| | `CORS_ORIGINS` | `*` | Comma-separated list of allowed origins |
-| `apps/web/.env` | `VITE_API_URL` | *(same origin)* | API location in production |
-| `apps/mobile/.env` | `EXPO_PUBLIC_API_URL` | `http://localhost:4000` | Android emulator: `http://10.0.2.2:4000`. Phone: your computer's LAN IP |
+| `.env.local` (from `neon deploy`) | Neon variables | | Loaded after `apps/api/.env`; real environment variables win |
+| `apps/api/.env` | `PORT` | `4000` | Server port |
+| | `PUBLIC_URL` | `http://localhost:4000` | The address people visit. **Required** (https) in production |
+| | `DATABASE_URL` | *(empty: JSON files)* | Pooled Neon connection string. **Required** in production |
+| | `DATABASE_URL_UNPOOLED` | `DATABASE_URL` | Direct Neon connection string, used to create the tables |
+| `.env.local` | `NEON_AUTH_BASE_URL`, `NEON_AUTH_JWKS_URL` | | Neon Auth. Without them nobody can sign in. **Required** in production |
+| `.env.local` | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_ENDPOINT_URL_S3`, `AWS_REGION` | *(empty: `DATA_DIR/media`)* | Neon Object Storage for uploaded images. **Required** in production |
+| | `MEDIA_BUCKET` | `assets` | The bucket from `neon.ts` |
+| | `DATA_DIR` | `./data` | Where the JSON files live (development only) |
+| | `CORS_ORIGINS` | `*` (dev) / `PUBLIC_URL` (prod) | Comma-separated list of allowed origins |
+| `apps/web/.env` | `VITE_API_URL` | *(same origin)* | Only if the web app is hosted apart from the API |
+| `apps/mobile/.env` | `EXPO_PUBLIC_API_URL` | `http://localhost:4000` in dev | The deployed address; **required** for release builds. Also used for share links |
 
-Generate a secret with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
+With `NODE_ENV=production` the server refuses to start until `PUBLIC_URL`, `DATABASE_URL`, Neon Auth and Neon Object Storage are set.
 
 > **Testing on a real phone:** start the API with `PUBLIC_URL=http://<LAN-IP>:4000`, then re-seed so the poster links point to an address the phone can reach.
+
+### Deploying
+
+One server answers everything on one origin: `/` (landing), `/:username` and `/:username/:slug` (public pages), and `/api/v1`. Tables are created on first start.
+
+- **Database (Neon):** the project is linked to Neon through `neon.ts` and the `.neon` file. Run `neon login`, then `neon deploy` (or `neon env pull`) to write the connection strings to `.env.local` at the repo root; git ignores that file. The API loads it on start and reads `DATABASE_URL` (pooled, for queries) and `DATABASE_URL_UNPOOLED` (direct, for creating the tables) through `@neon/env`. With `.env.local` present, local runs use Neon instead of the JSON files, so make a development branch with `neon checkout dev --create` before experimenting.
+- **Sign-in (Neon Auth):** `neon.ts` turns on Neon Auth for every branch. Before the first sign-in on the live site, trust its address: `neon neon-auth domain add https://<your-domain>` (localhost is trusted already). Neon's production checklist also asks for your own SMTP server for verification and reset emails.
+- **Images (Neon Object Storage):** uploads go to the private `assets` bucket and are served from `/media/...` on your own domain.
+- **Render:** push to GitHub, then **New → Blueprint** and pick this repo. `render.yaml` creates the web service, then asks for `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, the two `NEON_AUTH_*` and four `AWS_*` values (copy them from the **production** branch's `.env.local`), and `PUBLIC_URL` (for example `https://event-tree.onrender.com`, or your own domain).
+- **Anywhere else:** build the `Dockerfile` and set `NODE_ENV=production`, `PUBLIC_URL` and the same Neon variables.
+- **Mobile:** set `EXPO_PUBLIC_API_URL` to the same `PUBLIC_URL` before building with EAS.
 
 ---
 
 ## 📡 API reference
 
 Base path: **`/api/v1`**. Errors always look like `{ "error": { "code", "message", "field?" } }`.
-Routes marked 🔒 need `Authorization: Bearer <token>` from sign-up or log-in.
+Routes marked 🔒 need `Authorization: Bearer <JWT>`: the Neon Auth token (`GET /api/auth/token` after signing in through `/api/auth`).
 
 **Accounts**
 
 | Method | Path | Body | Returns |
 |---|---|---|---|
-| `POST` | `/auth/signup` | `{ email, username, password, displayName? }` | `201 { token, user }` |
-| `POST` | `/auth/login` | `{ email, password }` | `{ token, user }` |
-| `GET` | `/auth/me` 🔒 | | `UserDTO` |
+| `*` | `/api/auth/*` (outside `/api/v1`) | Neon Auth: `sign-up/email`, `sign-in/email`, `sign-out`, `get-session`, `token` | Better Auth responses |
+| `GET` | `/auth/me` 🔒 | | `{ identity, user }` (`user` is null until a page is claimed) |
+| `POST` | `/auth/claim` 🔒 | `{ username, displayName? }` | `201 UserDTO` (creates the page) |
+| `POST` | `/me/uploads` 🔒 | the image itself (`image/jpeg`, `png`, `gif` or `webp`, up to 5 MB) | `201 { url }` |
 | `GET` | `/auth/username/:username` | | `{ username, available, reason? }` |
 
 **Dashboard** (always the logged-in host's own data)
@@ -311,19 +329,22 @@ Routes marked 🔒 need `Authorization: Bearer <token>` from sign-up or log-in.
 | `POST` | `/pages/:username/views` | | `204` (counts one page view) |
 | `POST` | `/events/:id/clicks` | | `204` (counts one event click) |
 | `POST` | `/events/:id/images` | `{ url, alt?, caption? }` | `201 EventDTO` |
+| `POST` | `/events/:id/photos?caption=` | the image itself | `201 EventDTO` (photo stored in Neon Object Storage) |
 | `GET` | `/events/:id/reviews` | | `ReviewDTO[]` (newest first) |
 | `GET` | `/events/:id/reviews/summary` | | `{ count, average, distribution }` |
 | `POST` | `/events/:id/reviews` | `{ authorName, rating, comment? }` | `201 ReviewDTO` |
 
-Status codes: `400` validation · `401` not logged in · `403` not your event · `404` not found · `409` taken (email or username) or a business rule (e.g. reviewing an event that hasn't started).
+Status codes: `400` validation · `401` not logged in · `403` not your event, or no page claimed yet · `404` not found · `409` taken (email or username) or a business rule (e.g. reviewing an event that hasn't started).
 
 <details>
-<summary>Example: log in and add an event</summary>
+<summary>Example: sign in and add an event</summary>
 
 ```bash
-TOKEN=$(curl -s -X POST http://localhost:4000/api/v1/auth/login \
-  -H "content-type: application/json" \
-  -d '{"email":"buildersmeetup@demo.eventtree.test","password":"demo-password"}' | node -pe 'JSON.parse(require("fs").readFileSync(0)).token')
+# Sign in through the Neon Auth proxy (keeps the session cookie), then get a JWT.
+curl -s -c jar.txt -X POST http://localhost:4000/api/auth/sign-in/email \
+  -H "content-type: application/json" -H "origin: http://localhost:4000" \
+  -d '{"email":"you@example.com","password":"your-password"}' > /dev/null
+TOKEN=$(curl -s -b jar.txt http://localhost:4000/api/auth/token | node -pe 'JSON.parse(require("fs").readFileSync(0)).token')
 
 curl -X POST http://localhost:4000/api/v1/me/events \
   -H "authorization: Bearer $TOKEN" -H "content-type: application/json" \
@@ -367,7 +388,7 @@ Each module was built and tested before the next one started, with its own commi
 
 ## 🗺️ Roadmap
 
-- [ ] Postgres repositories behind the same interfaces
+- [x] Postgres repositories behind the same interfaces
 - [ ] Drag-and-drop reordering (the API already takes a full order)
 - [ ] Image uploads to object storage (the domain stores links, so only the input changes)
 - [ ] Password reset by email, and keeping the mobile session in `expo-secure-store`

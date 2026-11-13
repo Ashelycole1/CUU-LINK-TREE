@@ -24,6 +24,7 @@ export default function RootLayout() {
         >
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="login" options={{ title: "Log in", presentation: "modal" }} />
+          <Stack.Screen name="claim" options={{ title: "Your page" }} />
           <Stack.Screen name="dashboard/index" options={{ title: "Your events" }} />
           <Stack.Screen name="dashboard/new" options={{ title: "Add event", presentation: "modal" }} />
           <Stack.Screen name="[username]/index" options={{ headerShown: false }} />

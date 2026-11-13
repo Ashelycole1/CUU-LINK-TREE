@@ -9,7 +9,7 @@ import { brand } from "../../src/theme";
 
 /** The host's events: show/hide, reorder, delete, add. The phone version of the web dashboard. */
 export default function DashboardScreen() {
-  const { user, logout } = useAuth();
+  const { identity, user, checking, logout } = useAuth();
   const events = useResource(() => (user ? api.listMyEvents() : Promise.resolve([])), [user?.id]);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -21,7 +21,9 @@ export default function DashboardScreen() {
     }, []),
   );
 
-  if (!user) return <Redirect href="/login" />;
+  if (checking) return null;
+  if (!identity) return <Redirect href="/login" />;
+  if (!user) return <Redirect href="/claim" />;
   const list = events.data ?? [];
 
   async function run(action: () => Promise<unknown>, message: string) {
@@ -56,8 +58,7 @@ export default function DashboardScreen() {
           headerRight: () => (
             <Pressable
               onPress={() => {
-                logout();
-                router.replace("/");
+                void logout().then(() => router.replace("/"));
               }}
               hitSlop={10}
               accessibilityRole="button"
@@ -86,7 +87,7 @@ export default function DashboardScreen() {
             {!!notice && <Text style={styles.notice}>{notice}</Text>}
           </View>
         }
-        ListEmptyComponent={events.loading ? null : <Text style={styles.empty}>No events yet. Add your first one.</Text>}
+        ListEmptyComponent={events.loading ? undefined : <Text style={styles.empty}>No events yet. Add your first one.</Text>}
         renderItem={({ item, index }) => (
           <View style={[styles.card, item.hidden && { backgroundColor: brand.paper2 }]}>
             <View style={styles.reorder}>

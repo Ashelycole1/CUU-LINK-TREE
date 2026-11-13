@@ -1,81 +1,68 @@
-import { useMemo, useState } from "react";
+import { useId, useState } from "react";
 import { Link } from "react-router-dom";
 import type { EventDTO, TreeDTO } from "@event-tree/api-client";
-import { BrowserStore } from "../../lib/BrowserStore";
 import { appearanceStyle } from "../../theme/appearance";
 import { EventTicket } from "./EventTicket";
-import { Filters } from "./Filters";
-import { NextUpCard } from "./NextUpCard";
 import { ProfileHeader } from "./ProfileHeader";
-import { StatusTabs, type Tab } from "./StatusTabs";
-
-const tabStore = new BrowserStore<Tab>("event-tree:tab", "upcoming", "session");
 
 interface Props {
   tree: TreeDTO;
   /** Called when a visitor opens an event (for click analytics). */
   onOpen?: (event: EventDTO) => void;
+  /** A non-interactive picture of a page (the landing sample): links are inert and the height follows the content. */
+  preview?: boolean;
 }
 
 /**
- * A host's whole public page, rendered from one TreeDTO. Used by the public
- * route and by the dashboard preview, so both always look identical.
+ * A host's whole public page, rendered from one TreeDTO and laid out like
+ * Linktree: avatar, name, bio, socials, then one button per upcoming event.
+ * Past events sit behind a toggle at the end. Used by the public route and
+ * by the dashboard preview, so both always look identical.
  */
-export function TreeView({ tree, onOpen }: Props) {
+export function TreeView({ tree, onOpen, preview = false }: Props) {
   const { profile } = tree;
-  const [tab, setTab] = useState<Tab>(() => tabStore.get());
-  const [category, setCategory] = useState("");
-  const [query, setQuery] = useState("");
+  const [showPast, setShowPast] = useState(false);
+  const pastId = useId();
 
-  // The page already has every visible event, so filtering locally keeps typing instant.
-  const visible = useMemo(() => {
-    const source = tab === "upcoming" ? tree.upcoming : tree.past;
-    const q = query.trim().toLowerCase();
-    return source.filter(
-      (e) =>
-        (!category || e.category === category) &&
-        (!q || [e.title, e.description, e.venue, e.organizer, e.category].some((v) => v.toLowerCase().includes(q))),
-    );
-  }, [tab, tree, category, query]);
-
-  const changeTab = (next: Tab) => {
-    tabStore.set(next);
-    setTab(next);
-  };
+  const button = (e: EventDTO) => (
+    <EventTicket key={e.id} event={e} username={profile.username} buttonStyle={profile.appearance.buttonStyle} onOpen={onOpen} />
+  );
 
   return (
-    <div className={`tree tree--${profile.appearance.buttonStyle}`} style={appearanceStyle(profile.appearance)}>
+    <div
+      className={`tree tree--${profile.appearance.buttonStyle}${preview ? " tree--preview" : ""}`}
+      style={appearanceStyle(profile.appearance)}
+      inert={preview}
+    >
       <main className="tree-column">
-        <ProfileHeader profile={profile} upcomingCount={tree.upcoming.length} />
+        <ProfileHeader profile={profile} />
 
-        {tree.upcoming.length > 0 && (
-          <section aria-label="Next up">
-            <h2 className="tree-head">Next up</h2>
-            <div className="next-row">
-              {tree.upcoming.slice(0, 3).map((e) => (
-                <NextUpCard key={e.id} event={e} username={profile.username} onOpen={onOpen} />
-              ))}
+        <section className="ticket-list" aria-label="Upcoming events">
+          {tree.upcoming.map(button)}
+          {tree.upcoming.length === 0 && (
+            <p className="tree-empty">{tree.past.length === 0 ? "No events yet. Check back soon." : "No upcoming events yet."}</p>
+          )}
+        </section>
+
+        {tree.past.length > 0 && (
+          <section className="past">
+            <button
+              type="button"
+              className="past-toggle"
+              aria-expanded={showPast}
+              aria-controls={pastId}
+              onClick={() => setShowPast((v) => !v)}
+            >
+              {showPast ? "Hide past events" : `Past events (${tree.past.length})`}
+              <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true">
+                <path d="M2 4.5 6 8.5 10 4.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <div id={pastId} className="ticket-list is-past" hidden={!showPast}>
+              {showPast && tree.past.map(button)}
             </div>
           </section>
         )}
-
-        <StatusTabs value={tab} onChange={changeTab} counts={{ upcoming: tree.upcoming.length, past: tree.past.length }} />
-        <Filters query={query} onQuery={setQuery} categories={tree.categories} category={category} onCategory={setCategory} />
-
-        <section className="ticket-list" aria-live="polite">
-          {visible.length === 0 && (
-            <p className="tree-empty">
-              {tree.upcoming.length + tree.past.length === 0
-                ? "No events yet. Check back soon."
-                : tab === "upcoming"
-                  ? "Nothing coming up that matches."
-                  : "No past events match."}
-            </p>
-          )}
-          {visible.map((e) => (
-            <EventTicket key={e.id} event={e} username={profile.username} buttonStyle={profile.appearance.buttonStyle} onOpen={onOpen} />
-          ))}
-        </section>
 
         <footer className="tree-footer">
           <Link to="/" className="made-with">

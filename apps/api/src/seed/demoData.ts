@@ -22,7 +22,6 @@ export interface DemoHost {
   events: DemoEvent[];
 }
 
-export const DEMO_PASSWORD = "demo-password";
 export const demoEmail = (username: string) => `${username}@demo.eventtree.test`;
 
 export const DEMO_HOSTS: DemoHost[] = [

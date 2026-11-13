@@ -6,13 +6,17 @@ import { Username } from "./Username";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/** An account that owns one public event page. The password hash never leaves the server. */
+/**
+ * A host: the link between a Neon Auth identity and one public event page.
+ * Neon Auth owns the email, password and sessions; this entity only records
+ * which username (and so which page) belongs to that identity. Its id is the
+ * Neon Auth user id (the JWT `sub`).
+ */
 export class User extends Entity {
   private constructor(
     id: string,
     readonly email: string,
     readonly username: Username,
-    private readonly passwordHash: string,
     readonly createdAt: Date,
   ) {
     super(id);
@@ -24,33 +28,16 @@ export class User extends Entity {
     return email;
   }
 
-  static create(input: { email: unknown; username: unknown; passwordHash: string }, ctx: { id: string; now: Date }): User {
-    return new User(ctx.id, User.normaliseEmail(input.email), Username.of(input.username), input.passwordHash, ctx.now);
+  static create(input: { id: string; email: unknown; username: unknown }, now: Date): User {
+    return new User(Guard.text(input.id, "id", { min: 1, max: 128 }), User.normaliseEmail(input.email), Username.of(input.username), now);
   }
 
   static restore(record: UserRecord): User {
-    return new User(
-      record.id,
-      User.normaliseEmail(record.email),
-      Username.of(record.username),
-      record.passwordHash,
-      Guard.date(record.createdAt, "createdAt"),
-    );
-  }
-
-  /** Exposed only to the AuthService for verification. */
-  get hash(): string {
-    return this.passwordHash;
+    return new User(record.id, User.normaliseEmail(record.email), Username.of(record.username), Guard.date(record.createdAt, "createdAt"));
   }
 
   toRecord(): UserRecord {
-    return {
-      id: this.id,
-      email: this.email,
-      username: this.username.value,
-      passwordHash: this.passwordHash,
-      createdAt: this.createdAt.toISOString(),
-    };
+    return { id: this.id, email: this.email, username: this.username.value, createdAt: this.createdAt.toISOString() };
   }
 
   toDTO(): UserDTO {
@@ -65,14 +52,19 @@ export interface UserRepository {
   save(user: User): Promise<void>;
 }
 
-/** Ports implemented by the server (scrypt, HMAC). The domain never sees raw crypto. */
-export interface PasswordHasher {
-  hash(password: string): Promise<string>;
-  verify(password: string, hash: string): Promise<boolean>;
+/** Who a verified token belongs to. */
+export interface Identity {
+  /** Neon Auth user id (the JWT `sub`). */
+  id: string;
+  email: string;
+  name?: string;
 }
 
-export interface TokenService {
-  issue(userId: string): string;
-  /** Returns the user id, or null for a missing, forged or expired token. */
-  verify(token: string): string | null;
+/**
+ * Port for checking a sign-in token. The API implements it by verifying a
+ * Neon Auth JWT against the branch's JWKS; tests use a fake.
+ */
+export interface IdentityVerifier {
+  /** Returns the identity, or null for a missing, forged or expired token. */
+  verify(token: string): Promise<Identity | null>;
 }

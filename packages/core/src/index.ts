@@ -10,6 +10,7 @@ export {
   NotFoundError,
   UnauthorizedError,
   ForbiddenError,
+  PageRequiredError,
 } from "./shared/errors";
 export { Entity, ValueObject } from "./shared/Entity";
 export { Guard, slugify } from "./shared/guards";
@@ -39,7 +40,7 @@ export { ProfileService } from "./profile/ProfileService";
 export { THEME_PRESETS, DEFAULT_THEME_ID, findTheme } from "./profile/themes";
 
 export { Username } from "./users/Username";
-export { User, type UserRepository, type PasswordHasher, type TokenService } from "./users/User";
+export { User, type UserRepository, type Identity, type IdentityVerifier } from "./users/User";
 export { AuthService } from "./users/AuthService";
 
 export { AnalyticsService, type AnalyticsRepository } from "./analytics/AnalyticsService";
@@ -50,6 +51,5 @@ export {
   InMemoryProfileRepository,
   InMemoryUserRepository,
   InMemoryAnalyticsRepository,
-  PlainTextPasswordHasher,
-  FakeTokenService,
+  FakeIdentityVerifier,
 } from "./infrastructure/InMemory";

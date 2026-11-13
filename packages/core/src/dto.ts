@@ -143,11 +143,11 @@ export interface TreeDTO {
 
 /* ---------- users & auth ---------- */
 
+/** A host: a Neon Auth identity (id = JWT sub) linked to one username and page. */
 export interface UserRecord {
   id: string;
   email: string;
   username: string;
-  passwordHash: string;
   createdAt: string;
 }
 
@@ -158,21 +158,23 @@ export interface UserDTO {
   createdAt: string;
 }
 
-export interface SignupInput {
-  email: string;
+/** Claim a username after signing up with Neon Auth. This creates the page. */
+export interface ClaimPageInput {
   username: string;
-  password: string;
   displayName?: string;
 }
 
-export interface LoginInput {
-  email: string;
-  password: string;
+/** The signed-in person; `user` is null until they claim a username. */
+export interface MeDTO {
+  identity: { id: string; email: string };
+  user: UserDTO | null;
 }
 
-export interface AuthSessionDTO {
-  token: string;
-  user: UserDTO;
+/* ---------- uploads ---------- */
+
+export interface UploadDTO {
+  /** Absolute address the image is served from, e.g. https://…/media/u/<id>/<file>.jpg */
+  url: string;
 }
 
 /* ---------- analytics ---------- */

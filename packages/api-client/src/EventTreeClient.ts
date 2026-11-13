@@ -1,29 +1,33 @@
 import type {
   AddImageInput,
   AnalyticsSummaryDTO,
-  AuthSessionDTO,
+  ClaimPageInput,
   CreateEventInput,
   CreateReviewInput,
   EventDTO,
   EventListQuery,
-  LoginInput,
+  MeDTO,
   ProfileDTO,
   RatingSummaryDTO,
   ReviewDTO,
-  SignupInput,
   ThemePreset,
   TreeDTO,
   UpdateEventInput,
   UpdateProfileInput,
+  UploadDTO,
   UserDTO,
 } from "@event-tree/core";
 import { HttpTransport, type TransportOptions } from "./HttpTransport";
 
 const seg = encodeURIComponent;
 
+/** Raw image data: a Blob or File in browsers and React Native, or bytes. */
+export type ImageBody = Blob | ArrayBuffer | Uint8Array;
+
 /**
  * The Event Tree API as typed methods, grouped the way the product is:
- * auth, public pages, visitor actions, and the host dashboard. The web and
+ * accounts, public pages, visitor actions, and the host dashboard.
+ * Sign-in itself is Neon Auth (see NeonAuthSession); this client sends its JWT. The web and
  * mobile apps both create one; neither writes a URL by hand.
  */
 export class EventTreeClient {
@@ -35,17 +39,15 @@ export class EventTreeClient {
     this.http = new HttpTransport({ ...options, baseUrl: `${root}${EventTreeClient.API_PREFIX}` });
   }
 
-  /* ---------- auth ---------- */
-  signup(input: SignupInput): Promise<AuthSessionDTO> {
-    return this.http.post("/auth/signup", input);
-  }
-
-  login(input: LoginInput): Promise<AuthSessionDTO> {
-    return this.http.post("/auth/login", input);
-  }
-
-  me(): Promise<UserDTO> {
+  /* ---------- accounts ---------- */
+  /** The signed-in person; `user` is null until they claim a username. */
+  me(): Promise<MeDTO> {
     return this.http.get("/auth/me");
+  }
+
+  /** Claims a username for the signed-in person, which creates their page. */
+  claim(input: ClaimPageInput): Promise<UserDTO> {
+    return this.http.post("/auth/claim", input);
   }
 
   checkUsername(username: string): Promise<{ username: string; available: boolean; reason?: string }> {
@@ -94,7 +96,17 @@ export class EventTreeClient {
     return this.http.post(`/events/${seg(eventId)}/images`, image);
   }
 
+  /** A visitor's own photo for the event's gallery (JPEG, PNG, GIF or WebP, up to 5 MB). */
+  uploadEventPhoto(eventId: string, file: ImageBody, contentType: string, caption?: string): Promise<EventDTO> {
+    return this.http.upload(`/events/${seg(eventId)}/photos`, file, contentType, { caption: caption?.trim() || undefined });
+  }
+
   /* ---------- host dashboard (needs a token) ---------- */
+  /** Stores an avatar, header image or poster and returns the link to save on the profile or event. */
+  uploadImage(file: ImageBody, contentType: string): Promise<UploadDTO> {
+    return this.http.upload("/me/uploads", file, contentType);
+  }
+
   getMyProfile(): Promise<ProfileDTO> {
     return this.http.get("/me/profile");
   }

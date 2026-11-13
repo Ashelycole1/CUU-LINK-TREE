@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Image, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { ApiError, type EventDTO, type ImageLinkDTO } from "@event-tree/api-client";
 import { api } from "../lib/api";
+import { pickImage } from "../lib/pickImage";
 import { tokens } from "../theme";
 import { ErrorText, Field, PrimaryButton } from "./Field";
 
@@ -10,26 +11,32 @@ interface Props {
   onUpdated: (event: EventDTO) => void;
 }
 
-/** Three-column photo grid with a full-screen viewer and an add-by-link form. */
+/** Three-column photo grid with a full-screen viewer, and a button to add your own photo. */
 export function Gallery({ event, onUpdated }: Props) {
   const [open, setOpen] = useState<ImageLinkDTO | null>(null);
-  const [url, setUrl] = useState("");
+  const [caption, setCaption] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   async function add() {
     setError(null);
     try {
-      onUpdated(await api.addImage(event.id, { url }));
-      setUrl("");
+      const image = await pickImage();
+      if (!image) return;
+      setBusy(true);
+      onUpdated(await api.uploadEventPhoto(event.id, image.body, image.type, caption));
+      setCaption("");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Could not add that image.");
+      setError(err instanceof ApiError || err instanceof Error ? err.message : "Could not add that photo.");
+    } finally {
+      setBusy(false);
     }
   }
 
   return (
     <View style={{ gap: 12 }}>
       {event.gallery.length === 0 ? (
-        <Text style={styles.note}>No photos yet. Add a link to one below.</Text>
+        <Text style={styles.note}>No photos yet. Were you there? Add yours below.</Text>
       ) : (
         <View style={styles.grid}>
           {event.gallery.map((img) => (
@@ -41,9 +48,9 @@ export function Gallery({ event, onUpdated }: Props) {
       )}
 
       <View style={styles.addCard}>
-        <Field label="Image link" placeholder="https://…" value={url} onChangeText={setUrl} keyboardType="url" autoCapitalize="none" />
+        <Field label="Caption (optional)" value={caption} onChangeText={setCaption} maxLength={200} />
         <ErrorText>{error}</ErrorText>
-        <PrimaryButton title="Add photo" onPress={add} disabled={!url.trim()} />
+        <PrimaryButton title={busy ? "Uploading…" : "Choose a photo"} onPress={add} disabled={busy} />
       </View>
 
       <Modal visible={!!open} transparent animationType="fade" onRequestClose={() => setOpen(null)}>

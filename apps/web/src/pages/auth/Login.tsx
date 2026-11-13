@@ -5,7 +5,7 @@ import { useAuth } from "../../auth/AuthContext";
 import { Logo } from "../../components/brand/Logo";
 
 export function Login() {
-  const { login } = useAuth();
+  const { signIn } = useAuth();
   const navigate = useNavigate();
   const from = (useLocation().state as { from?: string } | null)?.from ?? "/admin";
   const [email, setEmail] = useState("");
@@ -18,8 +18,9 @@ export function Login() {
     setBusy(true);
     setError("");
     try {
-      await login({ email, password });
-      navigate(from, { replace: true });
+      const me = await signIn({ email, password });
+      // Signed up before but never picked a username: finish that first.
+      navigate(me.user ? from : "/signup", { replace: true });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Couldn't log in.");
     } finally {
@@ -47,12 +48,6 @@ export function Login() {
             {busy ? "Logging in…" : "Log in"}
           </button>
         </form>
-        {import.meta.env.DEV && (
-          <p className="demo-hint">
-            Local demo: <code>buildersmeetup@demo.eventtree.test</code> with password <code>demo-password</code>, after{" "}
-            <code>npm run seed</code>.
-          </p>
-        )}
         <p className="auth-switch">
           New here? <Link to="/signup">Claim your page</Link>
         </p>

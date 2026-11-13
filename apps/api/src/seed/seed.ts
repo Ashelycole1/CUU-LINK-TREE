@@ -1,18 +1,21 @@
 /**
- * Loads the demo hosts in demoData.ts into the JSON store.
+ * Loads the demo hosts in demoData.ts into the local JSON store. For local
+ * development only: it refuses to run in production or against Postgres,
+ * so a live deployment always starts empty.
  *
  *   npm run seed            add the demo data (refuses if accounts exist)
  *   npm run seed -- --force replace all data
  *
- * Demo log-ins: <username>@demo.eventtree.test / demo-password
+ * The demo pages are public only: sign-in goes through Neon Auth, so there
+ * are no demo log-ins. Sign up through the app to get a dashboard.
  */
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { Config } from "../config";
 import { Container } from "../container";
 import { loadEnv } from "../env";
-import type { AnalyticsRecord } from "@event-tree/core";
-import { DEMO_HOSTS, DEMO_PASSWORD, demoEmail } from "./demoData";
+import { Profile, User, type AnalyticsRecord } from "@event-tree/core";
+import { DEMO_HOSTS, demoEmail } from "./demoData";
 
 const DATA_FILES = ["users.json", "profiles.json", "events.json", "reviews.json", "analytics.json"];
 const DAY = 86_400_000;
@@ -20,11 +23,14 @@ const DAY = 86_400_000;
 async function main() {
   loadEnv();
   const config = Config.fromEnv();
+  if (config.production || config.databaseUrl) {
+    throw new Error("The demo seed is for local development only. Unset NODE_ENV=production and DATABASE_URL to use it.");
+  }
   if (process.argv.includes("--force")) {
     for (const file of DATA_FILES) await fs.rm(path.join(config.dataDir, file), { force: true });
   }
 
-  const c = Container.fromConfig(config);
+  const c = await Container.fromConfig(config);
   if (await c.repositories.users.findByUsername(DEMO_HOSTS[0]!.username)) {
     console.log(`Demo data already exists in ${config.dataDir}. Run "npm run seed -- --force" to replace it.`);
     return;
@@ -37,12 +43,9 @@ async function main() {
   const traffic: AnalyticsRecord[] = [];
 
   for (const [hostIndex, host] of DEMO_HOSTS.entries()) {
-    const { user } = await c.auth.signup({
-      email: demoEmail(host.username),
-      username: host.username,
-      password: DEMO_PASSWORD,
-      displayName: host.displayName,
-    });
+    const user = User.create({ id: `demo-${host.username}`, email: demoEmail(host.username), username: host.username }, new Date());
+    await c.repositories.users.save(user);
+    await c.repositories.profiles.save(Profile.createFor(user.id, host.username, host.displayName));
     await c.profiles.updateMine(user.id, { ...host.profile, heroImageUrl: asset(host.profile.heroImageUrl) });
 
     const eventIds: string[] = [];
@@ -61,7 +64,7 @@ async function main() {
       for (const review of reviews ?? []) if (created.acceptsReviews) await c.reviews.add(created.id, review);
     }
     traffic.push(...demoTraffic(user.id, [...eventIds].reverse(), today, hostIndex + 1));
-    console.log(`  /${host.username}  (${demoEmail(host.username)} / ${DEMO_PASSWORD})`);
+    console.log(`  /${host.username}`);
   }
   // Written in one go: adding hundreds of records one at a time rewrites the file each time.
   await fs.writeFile(path.join(config.dataDir, "analytics.json"), JSON.stringify(traffic, null, 2));
