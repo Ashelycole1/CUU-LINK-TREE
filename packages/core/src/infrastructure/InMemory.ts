@@ -5,7 +5,7 @@ import type { EventRepository } from "../events/EventRepository";
 import { Profile, type ProfileRepository } from "../profile/Profile";
 import { Review } from "../reviews/Review";
 import type { ReviewRepository } from "../reviews/ReviewRepository";
-import { User, type PasswordHasher, type TokenService, type UserRepository } from "../users/User";
+import { User, type Identity, type IdentityVerifier, type UserRepository } from "../users/User";
 
 /**
  * In-memory adapters for tests and previews. They store records, not
@@ -106,24 +106,18 @@ export class InMemoryAnalyticsRepository implements AnalyticsRepository {
   }
 }
 
-/** NOT secure: reversible "hash" for tests only. The API uses scrypt. */
-export class PlainTextPasswordHasher implements PasswordHasher {
-  async hash(password: string): Promise<string> {
-    return `plain:${password}`;
+/**
+ * NOT secure: unsigned tokens for tests only. The API verifies Neon Auth
+ * JWTs against the branch's JWKS instead.
+ */
+export class FakeIdentityVerifier implements IdentityVerifier {
+  static tokenFor(id: string, email: string, name = ""): string {
+    return ["test", id, email, name].map(encodeURIComponent).join(":");
   }
 
-  async verify(password: string, hash: string): Promise<boolean> {
-    return hash === `plain:${password}`;
-  }
-}
-
-/** NOT secure: unsigned tokens for tests only. The API signs tokens with HMAC. */
-export class FakeTokenService implements TokenService {
-  issue(userId: string): string {
-    return `token:${userId}`;
-  }
-
-  verify(token: string): string | null {
-    return token.startsWith("token:") ? token.slice(6) : null;
+  async verify(token: string): Promise<Identity | null> {
+    const [kind, id, email, name] = token.split(":").map(decodeURIComponent);
+    if (kind !== "test" || !id || !email) return null;
+    return { id, email, ...(name ? { name } : {}) };
   }
 }

@@ -1,21 +1,22 @@
-import { ConflictError, UnauthorizedError, ValidationError } from "../shared/errors";
-import type { Clock, IdGenerator } from "../shared/ports";
-import type { AuthSessionDTO, LoginInput, SignupInput, UserDTO } from "../dto";
+import { ConflictError, PageRequiredError, UnauthorizedError } from "../shared/errors";
+import type { Clock } from "../shared/ports";
+import type { ClaimPageInput, MeDTO, UserDTO } from "../dto";
 import { Profile, type ProfileRepository } from "../profile/Profile";
-import { User, type PasswordHasher, type TokenService, type UserRepository } from "./User";
+import { User, type Identity, type IdentityVerifier, type UserRepository } from "./User";
 import { Username } from "./Username";
 
-/** Sign up, log in, and resolve a session token to a user. */
+/**
+ * Accounts on top of Neon Auth. Neon Auth handles sign-up, sign-in,
+ * passwords and sessions; this service turns a verified sign-in token into
+ * a host, and lets a signed-in person claim a username (which creates
+ * their page).
+ */
 export class AuthService {
-  static readonly MIN_PASSWORD = 8;
-
   constructor(
     private readonly users: UserRepository,
     private readonly profiles: ProfileRepository,
-    private readonly hasher: PasswordHasher,
-    private readonly tokens: TokenService,
+    private readonly identities: IdentityVerifier,
     private readonly clock: Clock,
-    private readonly ids: IdGenerator,
   ) {}
 
   /** For the "claim your username" box: true when the name is valid and free. */
@@ -29,35 +30,43 @@ export class AuthService {
     }
   }
 
-  async signup(input: SignupInput): Promise<AuthSessionDTO> {
-    const password = String(input.password ?? "");
-    if (password.length < AuthService.MIN_PASSWORD) {
-      throw new ValidationError(`Passwords need at least ${AuthService.MIN_PASSWORD} characters.`, "password");
-    }
-    const email = User.normaliseEmail(input.email);
+  /** Verifies a sign-in token. Throws UnauthorizedError when it is missing or invalid. */
+  async identify(token: string | null | undefined): Promise<Identity> {
+    const identity = token ? await this.identities.verify(token) : null;
+    if (!identity) throw new UnauthorizedError();
+    return identity;
+  }
+
+  /** The signed-in person, and their page if they have claimed one. */
+  async me(token: string | null | undefined): Promise<MeDTO> {
+    const identity = await this.identify(token);
+    const user = await this.users.findById(identity.id);
+    return { identity: { id: identity.id, email: identity.email }, user: user?.toDTO() ?? null };
+  }
+
+  /** Claims a username for the signed-in person and creates their page. */
+  async claim(token: string | null | undefined, input: ClaimPageInput): Promise<UserDTO> {
+    const identity = await this.identify(token);
+    if (await this.users.findById(identity.id)) throw new ConflictError("You already have a page.", "username");
     const username = Username.of(input.username).value;
-    if (await this.users.findByEmail(email)) throw new ConflictError("An account with that email already exists. Log in instead.", "email");
     if (await this.users.findByUsername(username)) throw new ConflictError("That username is taken.", "username");
 
-    const user = User.create({ email, username, passwordHash: await this.hasher.hash(password) }, { id: this.ids.next(), now: this.clock.now() });
+    const user = User.create({ id: identity.id, email: identity.email, username }, this.clock.now());
     await this.users.save(user);
-    await this.profiles.save(Profile.createFor(user.id, username, input.displayName));
-    return { token: this.tokens.issue(user.id), user: user.toDTO() };
+    const displayName = String(input.displayName ?? "").trim() || identity.name?.trim() || username;
+    await this.profiles.save(Profile.createFor(user.id, username, displayName));
+    return user.toDTO();
   }
 
-  async login(input: LoginInput): Promise<AuthSessionDTO> {
-    const user = await this.users.findByEmail(String(input.email ?? "").trim().toLowerCase());
-    // Same message for unknown email and wrong password, so accounts can't be probed.
-    const ok = user ? await this.hasher.verify(String(input.password ?? ""), user.hash) : false;
-    if (!user || !ok) throw new UnauthorizedError("That email and password don't match an account.");
-    return { token: this.tokens.issue(user.id), user: user.toDTO() };
-  }
-
-  /** Resolves a bearer token. Throws UnauthorizedError when it is missing or invalid. */
+  /**
+   * Resolves a token to a host with a page. Throws UnauthorizedError without
+   * a valid token, and PageRequiredError when the person has not claimed a
+   * username yet.
+   */
   async authenticate(token: string | null | undefined): Promise<UserDTO> {
-    const userId = token ? this.tokens.verify(token) : null;
-    const user = userId ? await this.users.findById(userId) : null;
-    if (!user) throw new UnauthorizedError();
+    const identity = await this.identify(token);
+    const user = await this.users.findById(identity.id);
+    if (!user) throw new PageRequiredError();
     return user.toDTO();
   }
 }

@@ -6,7 +6,7 @@ import {
   ConflictError,
   Event,
   EventService,
-  FakeTokenService,
+  FakeIdentityVerifier,
   FixedClock,
   ForbiddenError,
   ImageLink,
@@ -16,7 +16,7 @@ import {
   InMemoryReviewRepository,
   InMemoryUserRepository,
   NotFoundError,
-  PlainTextPasswordHasher,
+  PageRequiredError,
   ProfileService,
   Rating,
   ReviewService,
@@ -104,31 +104,44 @@ describe("Platform services", () => {
     const profileRepo = new InMemoryProfileRepository();
     const ids = new SequentialIdGenerator();
     clock = new FixedClock(NOW);
-    auth = new AuthService(new InMemoryUserRepository(), profileRepo, new PlainTextPasswordHasher(), new FakeTokenService(), clock, ids);
+    auth = new AuthService(new InMemoryUserRepository(), profileRepo, new FakeIdentityVerifier(), clock);
     events = new EventService(eventRepo, reviewRepo, profileRepo, clock, ids);
     reviews = new ReviewService(eventRepo, reviewRepo, clock, ids);
     profiles = new ProfileService(profileRepo);
     analytics = new AnalyticsService(new InMemoryAnalyticsRepository(), profileRepo, eventRepo, clock, ids);
   });
 
-  const signup = (username: string) => auth.signup({ email: `${username}@example.com`, username, password: "password123" });
+  /** Signs in with a fake Neon Auth token and claims a username, as the apps do after Neon sign-up. */
+  const signup = async (username: string) => {
+    const token = FakeIdentityVerifier.tokenFor(`neon-${username}`, `${username}@example.com`);
+    return { token, user: await auth.claim(token, { username }) };
+  };
 
   describe("AuthService", () => {
-    it("signs up, creates a page, and logs back in", async () => {
-      const session = await signup("jazzfest");
-      expect(session.user.username).toBe("jazzfest");
-      expect((await events.tree("jazzfest")).profile.displayName).toBe("jazzfest");
-      const again = await auth.login({ email: "JAZZFEST@example.com", password: "password123" });
-      expect((await auth.authenticate(again.token)).id).toBe(session.user.id);
+    it("claims a username for a Neon identity and creates the page", async () => {
+      const token = FakeIdentityVerifier.tokenFor("neon-1", "Host@Example.com", "City Jazz");
+      expect(await auth.me(token)).toEqual({ identity: { id: "neon-1", email: "Host@Example.com" }, user: null });
+      await expect(auth.authenticate(token)).rejects.toThrow(PageRequiredError);
+
+      const user = await auth.claim(token, { username: "jazzfest" });
+      expect(user).toMatchObject({ id: "neon-1", email: "host@example.com", username: "jazzfest" });
+      expect((await events.tree("jazzfest")).profile.displayName).toBe("City Jazz");
+      expect((await auth.authenticate(token)).id).toBe("neon-1");
+      expect((await auth.me(token)).user?.username).toBe("jazzfest");
     });
 
-    it("refuses taken usernames and emails, short passwords and bad logins", async () => {
+    it("refuses taken usernames, a second page and bad tokens", async () => {
       await signup("jazzfest");
       await expect(signup("jazzfest")).rejects.toThrow(ConflictError);
-      await expect(auth.signup({ email: "jazzfest@example.com", username: "other", password: "password123" })).rejects.toThrow(ConflictError);
-      await expect(auth.signup({ email: "a@b.co", username: "short", password: "123" })).rejects.toThrow(ValidationError);
-      await expect(auth.login({ email: "jazzfest@example.com", password: "wrong-password" })).rejects.toThrow(UnauthorizedError);
+      const other = FakeIdentityVerifier.tokenFor("neon-2", "other@example.com");
+      await expect(auth.claim(other, { username: "jazzfest" })).rejects.toThrow(ConflictError);
+      await auth.claim(other, { username: "runclub" });
+      await expect(auth.claim(other, { username: "another" })).rejects.toThrow(ConflictError);
+      const third = FakeIdentityVerifier.tokenFor("neon-3", "third@example.com");
+      await expect(auth.claim(third, { username: "a" })).rejects.toThrow(ValidationError);
+      await expect(auth.claim(third, { username: "admin" })).rejects.toThrow(ValidationError);
       await expect(auth.authenticate("garbage")).rejects.toThrow(UnauthorizedError);
+      await expect(auth.me(null)).rejects.toThrow(UnauthorizedError);
     });
 
     it("reports username availability", async () => {
