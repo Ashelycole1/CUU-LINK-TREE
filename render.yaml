@@ -2,8 +2,8 @@
 # The database is Neon (serverless Postgres): https://neon.tech
 #
 # Deploy: Render dashboard → New → Blueprint → pick this repo. Render then asks for:
-#   DATABASE_URL  your Neon connection string (Neon console → Connect → "Pooled connection"),
-#                 e.g. postgresql://user:password@ep-xxx-pooler.region.aws.neon.tech/neondb?sslmode=require
+#   DATABASE_URL           pooled Neon connection string  } both are in .env.local after
+#   DATABASE_URL_UNPOOLED  direct Neon connection string  } `neon deploy` / `neon env pull`
 #   PUBLIC_URL    the https:// address people visit, e.g. https://event-tree.onrender.com
 # Tables are created on first start.
 services:
@@ -22,6 +22,8 @@ services:
       - key: AUTH_SECRET
         generateValue: true
       - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_URL_UNPOOLED
         sync: false
       - key: PUBLIC_URL
         sync: false
