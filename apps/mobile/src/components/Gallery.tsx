@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Image, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { ApiError, type EventDTO, type ImageLinkDTO } from "@event-tree/api-client";
 import { api } from "../lib/api";
-import { pickImage } from "../lib/pickImage";
+import { IMAGE_SIZES, pickImage } from "../lib/pickImage";
 import { tokens } from "../theme";
 import { ErrorText, Field, PrimaryButton } from "./Field";
 
@@ -21,7 +21,7 @@ export function Gallery({ event, onUpdated }: Props) {
   async function add() {
     setError(null);
     try {
-      const image = await pickImage();
+      const image = await pickImage({ maxSide: IMAGE_SIZES.photo });
       if (!image) return;
       setBusy(true);
       onUpdated(await api.uploadEventPhoto(event.id, image.body, image.type, caption));

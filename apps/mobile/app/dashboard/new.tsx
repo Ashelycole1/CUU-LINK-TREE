@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import { ApiError } from "@event-tree/api-client";
 import { ErrorText, Field, PrimaryButton } from "../../src/components/Field";
 import { api } from "../../src/lib/api";
-import { pickImage } from "../../src/lib/pickImage";
+import { IMAGE_SIZES, pickImage } from "../../src/lib/pickImage";
 import { brand, tokens } from "../../src/theme";
 
 /** "2026-12-05 14:00" in the phone's time zone → ISO string. Empty or invalid → "" (the API explains). */
@@ -36,7 +36,7 @@ export default function NewEventScreen() {
   async function uploadPoster() {
     setError(null);
     try {
-      const image = await pickImage();
+      const image = await pickImage({ maxSide: IMAGE_SIZES.poster });
       if (!image) return;
       setUploading(true);
       const { url } = await api.uploadImage(image.body, image.type);
