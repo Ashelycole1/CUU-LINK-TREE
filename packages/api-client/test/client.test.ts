@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ApiError, EventTreeClient, Format, NeonAuthSession, type FetchLike, type SessionStore } from "../src";
+import { ApiError, EMAIL_NOT_VERIFIED, EventTreeClient, Format, NeonAuthSession, authErrorCode, type FetchLike, type SessionStore } from "../src";
 
 function fakeFetch(status: number, body: unknown, headers: Record<string, string> = {}) {
   const calls: { url: string; init?: RequestInit }[] = [];
@@ -114,6 +114,21 @@ describe("NeonAuthSession", () => {
       fetch: async () => new Response(JSON.stringify({ code: "INVALID_EMAIL_OR_PASSWORD", message: "Invalid" }), { status: 401 }),
     });
     await expect(auth.signIn({ email: "a@b.c", password: "x" })).rejects.toMatchObject({ status: 401, message: "That email and password don't match." });
+  });
+});
+
+describe("authErrorCode", () => {
+  it("treats every wording of an unconfirmed email as EMAIL_NOT_VERIFIED", () => {
+    expect(authErrorCode("EMAIL_NOT_VERIFIED", "Email not verified")).toBe(EMAIL_NOT_VERIFIED);
+    expect(authErrorCode(undefined, "Email verification required")).toBe(EMAIL_NOT_VERIFIED);
+    expect(authErrorCode("EMAIL_VERIFICATION_REQUIRED", undefined)).toBe(EMAIL_NOT_VERIFIED);
+    expect(authErrorCode("FORBIDDEN", "Email verification required")).toBe(EMAIL_NOT_VERIFIED);
+  });
+
+  it("leaves other errors alone", () => {
+    expect(authErrorCode("INVALID_EMAIL_OR_PASSWORD", "Invalid email or password")).toBe("INVALID_EMAIL_OR_PASSWORD");
+    expect(authErrorCode("EMAIL_ALREADY_VERIFIED", "Email already verified")).toBe("EMAIL_ALREADY_VERIFIED");
+    expect(authErrorCode("INVALID_OTP", "Invalid OTP")).toBe("INVALID_OTP");
   });
 });
 

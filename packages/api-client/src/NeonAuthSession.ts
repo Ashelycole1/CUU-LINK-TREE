@@ -151,7 +151,8 @@ export class NeonAuthSession {
     const payload: unknown = await res.json().catch(() => null);
     if (!res.ok) {
       const err = payload as { code?: string; message?: string } | null;
-      throw new ApiError(res.status, err?.code ?? "AUTH_ERROR", friendlyAuthMessage(err?.code, err?.message ?? `Sign-in failed (${res.status}).`));
+      const code = authErrorCode(err?.code, err?.message);
+      throw new ApiError(res.status, code ?? "AUTH_ERROR", friendlyAuthMessage(code, err?.message ?? `Sign-in failed (${res.status}).`));
     }
     return payload as T;
   }
@@ -171,6 +172,21 @@ function expiryOf(jwt: string): number {
 
 /** Better Auth's code for an account whose email hasn't been confirmed yet. */
 export const EMAIL_NOT_VERIFIED = "EMAIL_NOT_VERIFIED";
+
+/**
+ * The error code the apps act on. Neon Auth doesn't always say
+ * EMAIL_NOT_VERIFIED for an unconfirmed account (it can answer, for
+ * example, "Email verification required"), so any wording of that case
+ * becomes EMAIL_NOT_VERIFIED and opens the code step.
+ */
+export function authErrorCode(code: string | undefined, message: string | undefined): string | undefined {
+  const text = `${code ?? ""} ${message ?? ""}`;
+  if (/already/i.test(text)) return code;
+  if (/email[ _-]*(is[ _-]*)?not[ _-]*verified|email[ _-]*verification[ _-]*(is[ _-]*)?required|verify[ _-]*your[ _-]*email/i.test(text)) {
+    return EMAIL_NOT_VERIFIED;
+  }
+  return code;
+}
 
 /** Better Auth's error codes, in the app's own words. */
 export function friendlyAuthMessage(code: string | undefined, fallback: string): string {

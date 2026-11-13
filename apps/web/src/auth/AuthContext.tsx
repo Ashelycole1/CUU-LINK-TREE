@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { ApiError, EMAIL_NOT_VERIFIED, friendlyAuthMessage, type ClaimPageInput, type MeDTO, type UserDTO } from "@event-tree/api-client";
+import { ApiError, EMAIL_NOT_VERIFIED, authErrorCode, friendlyAuthMessage, type ClaimPageInput, type MeDTO, type UserDTO } from "@event-tree/api-client";
 import { api, authClient } from "../lib/api";
 
 interface AuthState {
@@ -25,8 +25,9 @@ const AuthContext = createContext<AuthState | null>(null);
 /** Turns a Neon Auth (Better Auth) failure into an ApiError worded for people. */
 function authError(error: unknown, fallback: string): ApiError {
   const e = (error ?? {}) as { status?: number; code?: string; message?: string; error?: { code?: string; message?: string; status?: number } };
-  const code = e.code ?? e.error?.code;
-  return new ApiError(e.status ?? e.error?.status ?? 0, code ?? "AUTH_ERROR", friendlyAuthMessage(code, e.message ?? e.error?.message ?? fallback));
+  const message = e.message ?? e.error?.message;
+  const code = authErrorCode(e.code ?? e.error?.code, message);
+  return new ApiError(e.status ?? e.error?.status ?? 0, code ?? "AUTH_ERROR", friendlyAuthMessage(code, message ?? fallback));
 }
 
 /** Runs a Neon Auth call, which either throws or returns { error }. */
