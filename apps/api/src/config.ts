@@ -64,7 +64,7 @@ export class Config {
       auth,
       storage,
       env.MEDIA_BUCKET?.trim() || MEDIA_BUCKET,
-      path.resolve(here, "../../static/assets"),
+      env.STATIC_ASSETS_DIR?.trim() ? path.resolve(env.STATIC_ASSETS_DIR) : path.resolve(here, "../../static/assets"),
       existsSync(path.join(webDist, "index.html")) ? webDist : null,
     );
   }
