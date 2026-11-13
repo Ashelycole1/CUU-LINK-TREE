@@ -45,8 +45,24 @@ export class NeonAuthSession {
     this.fetchImpl = options.fetch ?? ((input, init) => globalThis.fetch(input, init));
   }
 
-  async signUp(input: { email: string; password: string; name: string }): Promise<AuthUser> {
-    return (await this.call<{ user: AuthUser }>("POST", "/sign-up/email", input)).user;
+  /**
+   * Creates the account. When email verification is required, no session
+   * comes back (`verified: false`): the person must enter the emailed code
+   * with verifyEmail() before they are signed in.
+   */
+  async signUp(input: { email: string; password: string; name: string }): Promise<{ user: AuthUser; verified: boolean }> {
+    const data = await this.call<{ user: AuthUser; token?: string | null }>("POST", "/sign-up/email", input);
+    return { user: data.user, verified: Boolean(data.token) };
+  }
+
+  /** Checks the emailed sign-up code. Signs the person in when it is right. */
+  async verifyEmail(input: { email: string; otp: string }): Promise<void> {
+    await this.call("POST", "/email-otp/verify-email", input);
+  }
+
+  /** Emails a new sign-up code (codes expire after 15 minutes). */
+  async sendVerificationCode(email: string): Promise<void> {
+    await this.call("POST", "/email-otp/send-verification-otp", { email, type: "email-verification" });
   }
 
   async signIn(input: { email: string; password: string }): Promise<AuthUser> {
@@ -153,6 +169,9 @@ function expiryOf(jwt: string): number {
   return Date.now() + 5 * 60_000;
 }
 
+/** Better Auth's code for an account whose email hasn't been confirmed yet. */
+export const EMAIL_NOT_VERIFIED = "EMAIL_NOT_VERIFIED";
+
 /** Better Auth's error codes, in the app's own words. */
 export function friendlyAuthMessage(code: string | undefined, fallback: string): string {
   switch (code) {
@@ -165,8 +184,14 @@ export function friendlyAuthMessage(code: string | undefined, fallback: string):
       return "Use at least 8 characters for your password.";
     case "INVALID_EMAIL":
       return "Enter a valid email address.";
-    case "EMAIL_NOT_VERIFIED":
-      return "Check your inbox and verify your email first.";
+    case EMAIL_NOT_VERIFIED:
+      return "Enter the code we emailed you to finish signing up.";
+    case "INVALID_OTP":
+      return "That code isn't right. Check the email and try again.";
+    case "OTP_EXPIRED":
+      return "That code has expired. Send a new one.";
+    case "TOO_MANY_ATTEMPTS":
+      return "Too many wrong codes. Send a new one.";
     default:
       return fallback;
   }

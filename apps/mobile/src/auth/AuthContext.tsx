@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { ApiError, type ClaimPageInput, type MeDTO, type UserDTO } from "@event-tree/api-client";
+import { ApiError, EMAIL_NOT_VERIFIED, friendlyAuthMessage, type ClaimPageInput, type MeDTO, type UserDTO } from "@event-tree/api-client";
 import { api, auth } from "../lib/api";
 
 interface AuthState {
@@ -10,7 +10,11 @@ interface AuthState {
   /** True while the saved session is checked on launch. */
   checking: boolean;
   signIn: (input: { email: string; password: string }) => Promise<MeDTO>;
+  /** Throws an ApiError with code EMAIL_NOT_VERIFIED when the emailed code must be entered first. */
   signUp: (input: { email: string; password: string; name: string }) => Promise<MeDTO>;
+  /** Checks the emailed code and signs the person in. */
+  verifyEmail: (input: { email: string; otp: string }) => Promise<MeDTO>;
+  resendCode: (email: string) => Promise<void>;
   claim: (input: ClaimPageInput) => Promise<UserDTO>;
   logout: () => Promise<void>;
 }
@@ -54,11 +58,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = useCallback(
     async (input: { email: string; password: string; name: string }) => {
-      await auth.signUp(input);
+      const { verified } = await auth.signUp(input);
+      // No session yet: the account exists, but the emailed code must be entered first.
+      if (!verified) throw new ApiError(403, EMAIL_NOT_VERIFIED, friendlyAuthMessage(EMAIL_NOT_VERIFIED, ""));
       return afterSignIn();
     },
     [afterSignIn],
   );
+
+  const verifyEmail = useCallback(
+    async (input: { email: string; otp: string }) => {
+      await auth.verifyEmail(input);
+      return afterSignIn();
+    },
+    [afterSignIn],
+  );
+
+  const resendCode = useCallback((email: string) => auth.sendVerificationCode(email), []);
 
   const claim = useCallback(async (input: ClaimPageInput) => {
     const user = await api.claim(input);
@@ -72,8 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ identity: me?.identity ?? null, user: me?.user ?? null, checking, signIn, signUp, claim, logout }),
-    [me, checking, signIn, signUp, claim, logout],
+    () => ({ identity: me?.identity ?? null, user: me?.user ?? null, checking, signIn, signUp, verifyEmail, resendCode, claim, logout }),
+    [me, checking, signIn, signUp, verifyEmail, resendCode, claim, logout],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

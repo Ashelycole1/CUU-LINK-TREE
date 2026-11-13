@@ -1,8 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { ApiError } from "@event-tree/api-client";
+import { ApiError, EMAIL_NOT_VERIFIED } from "@event-tree/api-client";
 import { useAuth } from "../../auth/AuthContext";
 import { Logo } from "../../components/brand/Logo";
+import { VerifyEmailForm } from "../../components/auth/VerifyEmailForm";
 import { api } from "../../lib/api";
 
 type Availability = { state: "idle" | "checking" | "ok" | "bad"; message?: string };
@@ -16,7 +17,7 @@ export function Signup() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const { identity, user, checking, signUp, claim, logout } = useAuth();
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [username, setUsername] = useState(params.get("username") ?? "");
   const [availability, setAvailability] = useState<Availability>({ state: "idle" });
   const [displayName, setDisplayName] = useState("");
@@ -50,17 +51,23 @@ export function Signup() {
     setBusy(true);
     setError("");
     try {
-      const name = displayName.trim();
       // A failed claim after sign-up leaves them signed in; they come back here to pick another name.
-      if (!identity) await signUp({ email, password, name: name || username });
-      await claim({ username, displayName: name || undefined });
-      navigate("/admin");
+      if (!identity) await signUp({ email, password, name: displayName.trim() || username });
+      await claimAndOpen();
     } catch (err) {
+      // The account exists; the emailed code comes next.
+      if (err instanceof ApiError && err.code === EMAIL_NOT_VERIFIED) return setStep(3);
       setError(err instanceof ApiError ? err.message : "Couldn't create your page.");
       if (err instanceof ApiError && err.field === "username") setStep(1);
     } finally {
       setBusy(false);
     }
+  }
+
+  async function claimAndOpen() {
+    const name = displayName.trim();
+    await claim({ username, displayName: name || undefined });
+    navigate("/admin");
   }
 
   if (checking) return <p className="loading-note">Loading…</p>;
@@ -70,7 +77,21 @@ export function Signup() {
     <div className="auth-page">
       <div className="auth-card">
         <Logo />
-        {step === 1 || identity ? (
+        {step === 3 && !identity ? (
+          <VerifyEmailForm
+            email={email}
+            onVerified={async () => {
+              try {
+                await claimAndOpen();
+              } catch (err) {
+                // Signed in now: back to picking a name if that one was taken meanwhile.
+                setError(err instanceof ApiError ? err.message : "Couldn't create your page.");
+                setStep(1);
+              }
+            }}
+            onBack={() => setStep(2)}
+          />
+        ) : step === 1 || identity ? (
           <form onSubmit={submit} className="auth-form">
             <h1>Claim your page</h1>
             <p>Pick the name people will see in your link. You can't change it later.</p>
