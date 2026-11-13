@@ -232,7 +232,7 @@ event-tree/
 
 ```bash
 npm install            # installs every workspace
-npm run seed           # 3 demo hosts with events, reviews and 30 days of sample analytics
+npm run seed           # local only: 3 demo hosts with events, reviews and 30 days of sample analytics
 npm run dev:api        # http://localhost:4000/api/v1
 npm run dev:web        # http://localhost:5173  (second terminal)
 npm run dev:mobile     # Expo dev server; press i / a, or scan the QR code with Expo Go
@@ -246,30 +246,43 @@ Then open **http://localhost:5173**, claim a name, or log in as a demo host:
 | `/nightandsong` (Aubergine theme) | `nightandsong@demo.eventtree.test` | `demo-password` |
 | `/sunrisesports` (Wristband theme) | `sunrisesports@demo.eventtree.test` | `demo-password` |
 
-These accounts exist only in your local `apps/api/data/` folder.
+These accounts exist only in your local `apps/api/data/` folder. The seed refuses to run in production or against Postgres, and the demo shortcuts on the landing, log-in and mobile home screens only appear in development builds, so a live deployment starts empty.
 
 | Command | What it does |
 |---|---|
 | `npm test` | Runs the core, api-client and API test suites |
 | `npm run typecheck` | Runs `tsc` in every workspace |
-| `npm run build:web` | Production build to `apps/web/dist` |
+| `npm run build:web` | Production build to `apps/web/dist` (the API serves it when present) |
+| `npm run start:prod` | Starts the server: API plus the built web app on one origin |
 | `npm run seed -- --force` | Wipes the data and re-seeds |
 
 ### Configuration
 
 | File | Variable | Default | Purpose |
 |---|---|---|---|
-| `apps/api/.env` | `PORT` | `4000` | API port |
-| | `PUBLIC_URL` | `http://localhost:4000` | Used to build poster links when seeding |
-| | `AUTH_SECRET` | dev fallback | Signs login tokens. **Required** when `NODE_ENV=production`; the API refuses to start without it |
-| | `DATA_DIR` | `./data` | Where the JSON files live |
-| | `CORS_ORIGINS` | `*` | Comma-separated list of allowed origins |
-| `apps/web/.env` | `VITE_API_URL` | *(same origin)* | API location in production |
-| `apps/mobile/.env` | `EXPO_PUBLIC_API_URL` | `http://localhost:4000` | Android emulator: `http://10.0.2.2:4000`. Phone: your computer's LAN IP |
+| `apps/api/.env` | `PORT` | `4000` | Server port |
+| | `PUBLIC_URL` | `http://localhost:4000` | The address people visit. **Required** (https) in production |
+| | `DATABASE_URL` | *(empty: JSON files)* | Postgres (Neon) connection string. **Required** in production |
+| | `AUTH_SECRET` | dev fallback | Signs login tokens. **Required** (32+ chars) in production |
+| | `DATA_DIR` | `./data` | Where the JSON files live (development only) |
+| | `CORS_ORIGINS` | `*` (dev) / `PUBLIC_URL` (prod) | Comma-separated list of allowed origins |
+| `apps/web/.env` | `VITE_API_URL` | *(same origin)* | Only if the web app is hosted apart from the API |
+| `apps/mobile/.env` | `EXPO_PUBLIC_API_URL` | `http://localhost:4000` in dev | The deployed address; **required** for release builds. Also used for share links |
+
+With `NODE_ENV=production` the server refuses to start until `PUBLIC_URL`, `DATABASE_URL` and `AUTH_SECRET` are set.
 
 Generate a secret with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
 
 > **Testing on a real phone:** start the API with `PUBLIC_URL=http://<LAN-IP>:4000`, then re-seed so the poster links point to an address the phone can reach.
+
+### Deploying
+
+One server answers everything on one origin: `/` (landing), `/:username` and `/:username/:slug` (public pages), and `/api/v1`. Tables are created on first start.
+
+- **Database (Neon):** create a free project at [neon.tech](https://neon.tech), then open **Connect** and copy the **pooled** connection string (`postgresql://…-pooler…neon.tech/neondb?sslmode=require`). That is your `DATABASE_URL`. Neon keeps the data between deploys; the server creates the tables on first start.
+- **Render:** push to GitHub, then **New → Blueprint** and pick this repo. `render.yaml` creates the web service and generates `AUTH_SECRET`, then asks for `DATABASE_URL` (the Neon string) and `PUBLIC_URL` (the service address, for example `https://event-tree.onrender.com`, or your own domain).
+- **Anywhere else:** build the `Dockerfile` and set `NODE_ENV=production`, `PUBLIC_URL`, `DATABASE_URL` and `AUTH_SECRET`. Use the same Neon `DATABASE_URL`.
+- **Mobile:** set `EXPO_PUBLIC_API_URL` to the same `PUBLIC_URL` before building with EAS.
 
 ---
 
@@ -367,7 +380,7 @@ Each module was built and tested before the next one started, with its own commi
 
 ## 🗺️ Roadmap
 
-- [ ] Postgres repositories behind the same interfaces
+- [x] Postgres repositories behind the same interfaces
 - [ ] Drag-and-drop reordering (the API already takes a full order)
 - [ ] Image uploads to object storage (the domain stores links, so only the input changes)
 - [ ] Password reset by email, and keeping the mobile session in `expo-secure-store`
