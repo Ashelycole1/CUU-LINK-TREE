@@ -1,32 +1,80 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
-import type { LoginInput, UserDTO } from "@event-tree/api-client";
-import { api, session } from "../lib/api";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { ApiError, type ClaimPageInput, type MeDTO, type UserDTO } from "@event-tree/api-client";
+import { api, auth } from "../lib/api";
 
 interface AuthState {
+  /** Signed in with Neon Auth. */
+  identity: MeDTO["identity"] | null;
+  /** Their page; null until they claim a username. */
   user: UserDTO | null;
-  login: (input: LoginInput) => Promise<UserDTO>;
-  logout: () => void;
+  /** True while the saved session is checked on launch. */
+  checking: boolean;
+  signIn: (input: { email: string; password: string }) => Promise<MeDTO>;
+  signUp: (input: { email: string; password: string; name: string }) => Promise<MeDTO>;
+  claim: (input: ClaimPageInput) => Promise<UserDTO>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
 
-/** The logged-in host, shared by the dashboard screens. */
+/** The signed-in host, shared by the dashboard screens. Restores the saved session on launch. */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<UserDTO | null>(null);
+  const [me, setMe] = useState<MeDTO | null>(null);
+  const [checking, setChecking] = useState(true);
 
-  const login = useCallback(async (input: LoginInput) => {
-    const result = await api.login(input);
-    session.set(result.token);
-    setUser(result.user);
-    return result.user;
+  const refresh = useCallback(async () => {
+    if (!(await auth.token())) {
+      setMe(null);
+      return null;
+    }
+    const next = await api.me();
+    setMe(next);
+    return next;
   }, []);
 
-  const logout = useCallback(() => {
-    session.set(null);
-    setUser(null);
+  useEffect(() => {
+    refresh()
+      .catch(() => setMe(null))
+      .finally(() => setChecking(false));
+  }, [refresh]);
+
+  const afterSignIn = useCallback(async () => {
+    const next = await refresh();
+    if (!next) throw new ApiError(401, "AUTH_ERROR", "Signed in, but the server didn't accept the session. Try again.");
+    return next;
+  }, [refresh]);
+
+  const signIn = useCallback(
+    async (input: { email: string; password: string }) => {
+      await auth.signIn(input);
+      return afterSignIn();
+    },
+    [afterSignIn],
+  );
+
+  const signUp = useCallback(
+    async (input: { email: string; password: string; name: string }) => {
+      await auth.signUp(input);
+      return afterSignIn();
+    },
+    [afterSignIn],
+  );
+
+  const claim = useCallback(async (input: ClaimPageInput) => {
+    const user = await api.claim(input);
+    setMe((prev) => (prev ? { ...prev, user } : prev));
+    return user;
   }, []);
 
-  const value = useMemo(() => ({ user, login, logout }), [user, login, logout]);
+  const logout = useCallback(async () => {
+    await auth.signOut().catch(() => undefined);
+    setMe(null);
+  }, []);
+
+  const value = useMemo(
+    () => ({ identity: me?.identity ?? null, user: me?.user ?? null, checking, signIn, signUp, claim, logout }),
+    [me, checking, signIn, signUp, claim, logout],
+  );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
