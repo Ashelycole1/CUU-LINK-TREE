@@ -5,6 +5,7 @@ import {
   DomainError,
   ForbiddenError,
   NotFoundError,
+  PageRequiredError,
   UnauthorizedError,
   ValidationError,
 } from "@event-tree/core";
@@ -19,6 +20,7 @@ const STATUS: [new (...args: never[]) => DomainError, number][] = [
   [ValidationError, 400],
   [UnauthorizedError, 401],
   [ForbiddenError, 403],
+  [PageRequiredError, 403],
   [NotFoundError, 404],
   [ConflictError, 409],
   [BusinessRuleError, 409],
@@ -35,6 +37,10 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     const field = (err as { field?: string }).field;
     if (field) body.error.field = field;
     res.status(status).json(body);
+    return;
+  }
+  if (err?.type === "entity.too.large") {
+    res.status(413).json({ error: { code: "TOO_LARGE", message: "That file is too big. Images can be up to 5 MB." } });
     return;
   }
   if (err?.type === "entity.parse.failed") {

@@ -1,8 +1,11 @@
 import type { Request, Response, Router } from "express";
 import type { AuthService } from "@event-tree/core";
-import { AuthenticatedController } from "../Controller";
+import { AuthenticatedController, bearerToken } from "../Controller";
 
-/** /auth: sign up, log in, check a username, and read the current session. */
+/**
+ * /auth: our side of accounts. Sign-up, sign-in and sessions happen in
+ * Neon Auth (see authProxy.ts); these routes take the Neon Auth JWT.
+ */
 export class AuthController extends AuthenticatedController {
   readonly basePath = "/auth";
 
@@ -11,22 +14,18 @@ export class AuthController extends AuthenticatedController {
   }
 
   protected register(router: Router): void {
-    router.post("/signup", this.handle(this.signup));
-    router.post("/login", this.handle(this.login));
     router.get("/me", this.handle(this.me));
+    router.post("/claim", this.handle(this.claim));
     router.get("/username/:username", this.handle(this.checkUsername));
   }
 
-  private async signup(req: Request, res: Response) {
-    res.status(201).json(await this.auth.signup(req.body ?? {}));
-  }
-
-  private async login(req: Request, res: Response) {
-    res.json(await this.auth.login(req.body ?? {}));
-  }
-
+  /** The signed-in person and their page (null until they claim a username). */
   private async me(req: Request, res: Response) {
-    res.json(await this.currentUser(req));
+    res.json(await this.auth.me(bearerToken(req)));
+  }
+
+  private async claim(req: Request, res: Response) {
+    res.status(201).json(await this.auth.claim(bearerToken(req), req.body ?? {}));
   }
 
   private async checkUsername(req: Request, res: Response) {

@@ -10,14 +10,15 @@ import {
   type Clock,
   type EventRepository,
   type IdGenerator,
-  type PasswordHasher,
+  type IdentityVerifier,
   type ProfileRepository,
   type ReviewRepository,
-  type TokenService,
   type UserRepository,
 } from "@event-tree/core";
+import path from "node:path";
 import type { Config } from "./config";
-import { HmacTokenService, ScryptPasswordHasher } from "./infrastructure/crypto";
+import { LocalMediaStore, NeonMediaStore, type MediaStore } from "./infrastructure/media";
+import { NeonJwtVerifier } from "./infrastructure/NeonJwtVerifier";
 import {
   JsonAnalyticsRepository,
   JsonEventRepository,
@@ -43,15 +44,13 @@ export interface Repositories {
   analytics: AnalyticsRepository;
 }
 
-export interface Security {
-  hasher: PasswordHasher;
-  tokens: TokenService;
-}
+/** Used when Neon Auth is not configured: every token is rejected, so nobody can sign in. */
+const NO_AUTH: IdentityVerifier = { verify: async () => null };
 
 /**
  * Composition root: the one place where concrete classes are chosen and
- * wired together. Tests build a Container with in-memory repositories,
- * fake security and a fixed clock.
+ * wired together. Tests build a Container with in-memory repositories, a
+ * fake identity verifier, in-memory media and a fixed clock.
  */
 export class Container {
   readonly auth: AuthService;
@@ -62,22 +61,30 @@ export class Container {
 
   constructor(
     readonly repositories: Repositories,
-    security: Security,
+    identities: IdentityVerifier,
+    readonly media: MediaStore,
     readonly clock: Clock = new SystemClock(),
     ids: IdGenerator = new RandomIdGenerator(),
   ) {
     const r = repositories;
-    this.auth = new AuthService(r.users, r.profiles, security.hasher, security.tokens, clock, ids);
+    this.auth = new AuthService(r.users, r.profiles, identities, clock);
     this.events = new EventService(r.events, r.reviews, r.profiles, clock, ids);
     this.reviews = new ReviewService(r.events, r.reviews, clock, ids);
     this.profiles = new ProfileService(r.profiles);
     this.analytics = new AnalyticsService(r.analytics, r.profiles, r.events, clock, ids);
   }
 
-  /** Neon Postgres when DATABASE_URL is set (required in production), JSON files otherwise. */
+  /**
+   * Neon Postgres when DATABASE_URL is set (required in production), JSON
+   * files otherwise; Neon Auth tokens; Neon Object Storage when configured,
+   * local files otherwise.
+   */
   static async fromConfig(config: Config): Promise<Container> {
-    const security = { hasher: new ScryptPasswordHasher(), tokens: new HmacTokenService(config.authSecret) };
-    if (!config.databaseUrl) return new Container(Container.jsonRepositories(config.dataDir), security);
+    const identities = config.auth ? new NeonJwtVerifier(config.auth) : NO_AUTH;
+    const media = config.storage
+      ? new NeonMediaStore(config.storage, config.mediaBucket)
+      : new LocalMediaStore(path.join(config.dataDir, "media"));
+    if (!config.databaseUrl) return new Container(Container.jsonRepositories(config.dataDir), identities, media);
 
     // Neon needs TLS with a verified certificate; local servers usually have no TLS.
     const ssl = (url: string) => (/localhost|127\.0\.0\.1/.test(url) ? undefined : { rejectUnauthorized: true });
@@ -95,7 +102,7 @@ export class Container {
     // Neon suspends idle databases and drops their connections. The pool
     // replaces them on the next query; without this listener Node would crash.
     pool.on("error", (error) => console.warn("Postgres connection dropped:", error.message));
-    return new Container(Container.pgRepositories(pool), security);
+    return new Container(Container.pgRepositories(pool), identities, media);
   }
 
   static jsonRepositories(dataDir: string): Repositories {
