@@ -1,14 +1,9 @@
 import { defineConfig } from "@neon/config/v1";
 
 export default defineConfig({
-  // Declare your Neon services here
-  preview: {
-    realtime: true,
-  },
+  // Neon Auth: sign-up and sign-in for hosts (see apps/api/src/http/authProxy.ts).
   auth: true,
-  functions: {
-    hello: { name: "Hello World", source: "./hello.ts" },
-  },
+  // Neon Object Storage: uploaded avatars, posters and event photos.
   buckets: {
     // "private" is the default; use "public_read" for anonymous reads
     assets: { access: "private" },

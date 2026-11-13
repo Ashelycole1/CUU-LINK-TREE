@@ -13,6 +13,7 @@
     "@event-tree/api-client": "0.1.0",
     "expo": "~58.0.25",
     "expo-constants": "~58.0.16",
+    "expo-image-manipulator": "~58.0.16",
     "expo-image-picker": "~58.0.10",
     "expo-linking": "~58.0.17",
     "expo-router": "~58.0.31",

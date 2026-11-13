@@ -1,7 +1,7 @@
 import { useId, useRef, useState } from "react";
 import { ApiError } from "@event-tree/api-client";
 import { api } from "../../lib/api";
-import { IMAGE_ACCEPT, imageProblem } from "../../lib/upload";
+import { IMAGE_ACCEPT, IMAGE_SIZES, compressImage, imageProblem } from "../../lib/upload";
 
 interface Props {
   label: string;
@@ -9,13 +9,15 @@ interface Props {
   onChange: (url: string) => void;
   placeholder?: string;
   className?: string;
+  /** Longest side in pixels; bigger images are scaled down before upload. */
+  maxSide?: number;
 }
 
 /**
  * An image for a host's page: upload a file (stored in Neon Object
  * Storage) or paste a link to one hosted elsewhere.
  */
-export function ImageField({ label, value, onChange, placeholder = "https://…", className = "span-2" }: Props) {
+export function ImageField({ label, value, onChange, placeholder = "https://…", className = "span-2", maxSide = IMAGE_SIZES.photo }: Props) {
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -28,9 +30,10 @@ export function ImageField({ label, value, onChange, placeholder = "https://…"
     if (problem) return;
     setBusy(true);
     try {
-      onChange((await api.uploadImage(file, file.type)).url);
+      const image = await compressImage(file, maxSide);
+      onChange((await api.uploadImage(image, image.type || file.type)).url);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Couldn't upload that image.");
+      setError(err instanceof ApiError || err instanceof Error ? err.message : "Couldn't upload that image.");
     } finally {
       setBusy(false);
       if (input.current) input.current.value = "";
