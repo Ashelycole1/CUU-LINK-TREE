@@ -7,7 +7,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 /**
  * Loads local settings with Node's built-in loader (no dotenv package):
  *
- *   1. apps/api/.env   your own overrides (PORT, AUTH_SECRET, ...)
+ *   1. apps/api/.env   your own overrides (PORT, CORS_ORIGINS, ...)
  *   2. .env.local      the Neon variables `neon deploy` / `neon env pull` writes at the repo root
  *
  * A variable that is already set is never overwritten, so real environment

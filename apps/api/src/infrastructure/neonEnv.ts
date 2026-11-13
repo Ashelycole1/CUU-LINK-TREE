@@ -31,3 +31,30 @@ export function neonDatabase(env: NodeJS.ProcessEnv = process.env): NeonDatabase
 function strictTls(url: string): string {
   return url.replace(/([?&]sslmode=)(require|prefer|verify-ca)(?=&|$)/, "$1verify-full");
 }
+
+export interface NeonAuthSettings {
+  /** Branch Managed Better Auth URL (includes its path), e.g. https://ep-….neonauth…/neondb/auth */
+  baseUrl: string;
+  jwksUrl: string;
+}
+
+/** Neon Auth settings through @neon/env, or null when NEON_AUTH_BASE_URL is not set. */
+export function neonAuth(env: NodeJS.ProcessEnv = process.env): NeonAuthSettings | null {
+  if (!env.NEON_AUTH_BASE_URL?.trim()) return null;
+  const { auth } = parseEnv(neonConfig, ["NEON_AUTH_BASE_URL", "NEON_AUTH_JWKS_URL"]);
+  return { baseUrl: auth.baseUrl.replace(/\/+$/, ""), jwksUrl: auth.jwksUrl };
+}
+
+export interface NeonStorageSettings {
+  accessKeyId: string;
+  secretAccessKey: string;
+  endpoint: string;
+  region: string;
+}
+
+/** Neon Object Storage credentials through @neon/env, or null when they are not set. */
+export function neonStorage(env: NodeJS.ProcessEnv = process.env): NeonStorageSettings | null {
+  if (!env.AWS_ENDPOINT_URL_S3?.trim()) return null;
+  const { storage } = parseEnv(neonConfig, ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_ENDPOINT_URL_S3", "AWS_REGION"]);
+  return storage;
+}
