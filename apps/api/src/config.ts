@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { neonDatabase } from "./infrastructure/neonEnv";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const DEV_SECRET = "dev-only-secret-change-me-before-deploying";
@@ -11,8 +12,10 @@ export class Config {
     readonly production: boolean,
     readonly port: number,
     readonly publicUrl: string,
-    /** Postgres connection string. When empty, data lives in JSON files under dataDir (development only). */
+    /** Pooled Neon Postgres connection string. When empty, data lives in JSON files under dataDir (development only). */
     readonly databaseUrl: string,
+    /** Direct (unpooled) connection string, used for schema migrations. */
+    readonly migrationUrl: string,
     readonly dataDir: string,
     readonly corsOrigins: string[] | "*",
     readonly authSecret: string,
@@ -28,7 +31,8 @@ export class Config {
     if (!Number.isInteger(port) || port <= 0) throw new Error(`PORT must be a positive integer, got "${env.PORT}".`);
 
     const secret = env.AUTH_SECRET?.trim() ?? "";
-    const databaseUrl = env.DATABASE_URL?.trim() ?? "";
+    const neon = neonDatabase(env);
+    const databaseUrl = neon?.pooledUrl ?? "";
     const publicUrl = (env.PUBLIC_URL?.trim() || (production ? "" : `http://localhost:${port}`)).replace(/\/+$/, "");
     if (production) {
       const missing = [
@@ -48,6 +52,7 @@ export class Config {
       port,
       publicUrl,
       databaseUrl,
+      neon?.directUrl ?? "",
       path.resolve(here, "..", env.DATA_DIR ?? "./data"),
       origins === "*" ? "*" : origins.split(",").map((o) => o.trim()).filter(Boolean),
       secret || DEV_SECRET,
