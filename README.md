@@ -260,9 +260,11 @@ These accounts exist only in your local `apps/api/data/` folder. The seed refuse
 
 | File | Variable | Default | Purpose |
 |---|---|---|---|
+| `.env.local` (from `neon deploy`) | Neon variables | | Loaded after `apps/api/.env`; real environment variables win |
 | `apps/api/.env` | `PORT` | `4000` | Server port |
 | | `PUBLIC_URL` | `http://localhost:4000` | The address people visit. **Required** (https) in production |
-| | `DATABASE_URL` | *(empty: JSON files)* | Postgres (Neon) connection string. **Required** in production |
+| | `DATABASE_URL` | *(empty: JSON files)* | Pooled Neon connection string. **Required** in production |
+| | `DATABASE_URL_UNPOOLED` | `DATABASE_URL` | Direct Neon connection string, used to create the tables |
 | | `AUTH_SECRET` | dev fallback | Signs login tokens. **Required** (32+ chars) in production |
 | | `DATA_DIR` | `./data` | Where the JSON files live (development only) |
 | | `CORS_ORIGINS` | `*` (dev) / `PUBLIC_URL` (prod) | Comma-separated list of allowed origins |
@@ -279,8 +281,8 @@ Generate a secret with `node -e "console.log(require('crypto').randomBytes(32).t
 
 One server answers everything on one origin: `/` (landing), `/:username` and `/:username/:slug` (public pages), and `/api/v1`. Tables are created on first start.
 
-- **Database (Neon):** create a free project at [neon.tech](https://neon.tech), then open **Connect** and copy the **pooled** connection string (`postgresql://…-pooler…neon.tech/neondb?sslmode=require`). That is your `DATABASE_URL`. Neon keeps the data between deploys; the server creates the tables on first start.
-- **Render:** push to GitHub, then **New → Blueprint** and pick this repo. `render.yaml` creates the web service and generates `AUTH_SECRET`, then asks for `DATABASE_URL` (the Neon string) and `PUBLIC_URL` (the service address, for example `https://event-tree.onrender.com`, or your own domain).
+- **Database (Neon):** the project is linked to Neon through `neon.ts` and the `.neon` file. Run `neon login`, then `neon deploy` (or `neon env pull`) to write the connection strings to `.env.local` at the repo root; git ignores that file. The API loads it on start and reads `DATABASE_URL` (pooled, for queries) and `DATABASE_URL_UNPOOLED` (direct, for creating the tables) through `@neon/env`. With `.env.local` present, local runs use Neon instead of the JSON files, so make a development branch with `neon checkout dev --create` before experimenting.
+- **Render:** push to GitHub, then **New → Blueprint** and pick this repo. `render.yaml` creates the web service and generates `AUTH_SECRET`, then asks for `DATABASE_URL` and `DATABASE_URL_UNPOOLED` (copy both from `.env.local`) and `PUBLIC_URL` (the service address, for example `https://event-tree.onrender.com`, or your own domain).
 - **Anywhere else:** build the `Dockerfile` and set `NODE_ENV=production`, `PUBLIC_URL`, `DATABASE_URL` and `AUTH_SECRET`. Use the same Neon `DATABASE_URL`.
 - **Mobile:** set `EXPO_PUBLIC_API_URL` to the same `PUBLIC_URL` before building with EAS.
 
