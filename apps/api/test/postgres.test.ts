@@ -1,9 +1,9 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { newDb } from "pg-mem";
 import type { Pool } from "pg";
-import { FixedClock, SequentialIdGenerator } from "@event-tree/core";
+import { FakeIdentityVerifier, FixedClock, SequentialIdGenerator } from "@event-tree/core";
 import { Container } from "../src/container";
-import { HmacTokenService, ScryptPasswordHasher } from "../src/infrastructure/crypto";
+import { MemoryMediaStore } from "../src/infrastructure/media";
 import { migrate } from "../src/infrastructure/PostgresRepositories";
 
 /**
@@ -19,7 +19,8 @@ beforeAll(async () => {
   await migrate(pool);
   c = new Container(
     Container.pgRepositories(pool),
-    { hasher: new ScryptPasswordHasher(), tokens: new HmacTokenService("test-secret-at-least-16") },
+    new FakeIdentityVerifier(),
+    new MemoryMediaStore(),
     clock,
     new SequentialIdGenerator("pg"),
   );
@@ -28,17 +29,15 @@ beforeAll(async () => {
 describe("Postgres storage", () => {
   let ownerId = "";
 
-  it("signs up, logs in and enforces unique usernames and emails", async () => {
-    const { user } = await c.auth.signup({ email: "host@example.com", username: "jazzfest", password: "long-password-1", displayName: "Jazz Fest" });
+  it("claims a page for a Neon identity and enforces unique usernames", async () => {
+    const token = FakeIdentityVerifier.tokenFor("neon-1", "host@example.com", "Jazz Fest");
+    const user = await c.auth.claim(token, { username: "jazzfest" });
     ownerId = user.id;
-    const login = await c.auth.login({ email: "host@example.com", password: "long-password-1" });
-    expect(login.user.username).toBe("jazzfest");
-    await expect(
-      c.auth.signup({ email: "other@example.com", username: "jazzfest", password: "long-password-1", displayName: "x" }),
-    ).rejects.toThrow();
-    await expect(
-      c.auth.signup({ email: "host@example.com", username: "another", password: "long-password-1", displayName: "x" }),
-    ).rejects.toThrow();
+    expect(ownerId).toBe("neon-1");
+    expect((await c.auth.authenticate(token)).username).toBe("jazzfest");
+    expect((await c.profiles.getMine(ownerId)).displayName).toBe("Jazz Fest");
+    await expect(c.auth.claim(FakeIdentityVerifier.tokenFor("neon-2", "other@example.com"), { username: "jazzfest" })).rejects.toThrow();
+    await expect(c.auth.claim(token, { username: "another" })).rejects.toThrow();
   });
 
   it("stores profiles and serves the public page", async () => {
