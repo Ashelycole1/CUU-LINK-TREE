@@ -1,4 +1,4 @@
-import type { Pool } from "pg";
+import type { Pool, PoolClient, Client } from "pg";
 import {
   Event,
   Profile,
@@ -59,8 +59,8 @@ CREATE INDEX IF NOT EXISTS analytics_owner_at_idx ON analytics (owner_id, at);
 `;
 
 /** Creates the tables if they are missing. Safe to run on every start. */
-export async function migrate(pool: Pool): Promise<void> {
-  await pool.query(SCHEMA);
+export async function migrate(db: Pool | PoolClient | Client): Promise<void> {
+  await db.query(SCHEMA);
 }
 
 async function docs<T>(pool: Pool, sql: string, params: unknown[]): Promise<T[]> {

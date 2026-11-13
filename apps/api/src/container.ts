@@ -74,22 +74,27 @@ export class Container {
     this.analytics = new AnalyticsService(r.analytics, r.profiles, r.events, clock, ids);
   }
 
-  /** Postgres when DATABASE_URL is set (required in production), JSON files otherwise. */
+  /** Neon Postgres when DATABASE_URL is set (required in production), JSON files otherwise. */
   static async fromConfig(config: Config): Promise<Container> {
     const security = { hasher: new ScryptPasswordHasher(), tokens: new HmacTokenService(config.authSecret) };
     if (!config.databaseUrl) return new Container(Container.jsonRepositories(config.dataDir), security);
 
-    const pool = new pg.Pool({
-      connectionString: config.databaseUrl,
-      // Neon (and other hosted Postgres) needs TLS; local servers usually don't.
-      ssl: /localhost|127\.0\.0\.1/.test(config.databaseUrl) ? undefined : { rejectUnauthorized: false },
-      max: 10,
-      idleTimeoutMillis: 30_000,
-    });
+    // Neon needs TLS with a verified certificate; local servers usually have no TLS.
+    const ssl = (url: string) => (/localhost|127\.0\.0\.1/.test(url) ? undefined : { rejectUnauthorized: true });
+
+    // Schema changes go over a direct connection, as Neon recommends; queries use the pooled one.
+    const direct = new pg.Client({ connectionString: config.migrationUrl, ssl: ssl(config.migrationUrl) });
+    await direct.connect();
+    try {
+      await migrate(direct);
+    } finally {
+      await direct.end();
+    }
+
+    const pool = new pg.Pool({ connectionString: config.databaseUrl, ssl: ssl(config.databaseUrl), max: 10, idleTimeoutMillis: 30_000 });
     // Neon suspends idle databases and drops their connections. The pool
     // replaces them on the next query; without this listener Node would crash.
     pool.on("error", (error) => console.warn("Postgres connection dropped:", error.message));
-    await migrate(pool);
     return new Container(Container.pgRepositories(pool), security);
   }
 
