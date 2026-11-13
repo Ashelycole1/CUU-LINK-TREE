@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ApiError } from "@event-tree/api-client";
+import { ApiError, EMAIL_NOT_VERIFIED, type MeDTO } from "@event-tree/api-client";
 import { useAuth } from "../../auth/AuthContext";
 import { Logo } from "../../components/brand/Logo";
+import { VerifyEmailForm } from "../../components/auth/VerifyEmailForm";
 
 export function Login() {
   const { signIn } = useAuth();
@@ -12,16 +13,20 @@ export function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+
+  // Signed up before but never picked a username: finish that first.
+  const open = (me: MeDTO) => navigate(me.user ? from : "/signup", { replace: true });
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError("");
     try {
-      const me = await signIn({ email, password });
-      // Signed up before but never picked a username: finish that first.
-      navigate(me.user ? from : "/signup", { replace: true });
+      open(await signIn({ email, password }));
     } catch (err) {
+      // Never entered the sign-up code: Neon Auth has just emailed a new one.
+      if (err instanceof ApiError && err.code === EMAIL_NOT_VERIFIED) return setVerifying(true);
       setError(err instanceof ApiError ? err.message : "Couldn't log in.");
     } finally {
       setBusy(false);
@@ -32,6 +37,9 @@ export function Login() {
     <div className="auth-page">
       <div className="auth-card">
         <Logo />
+        {verifying ? (
+          <VerifyEmailForm email={email} onVerified={open} onBack={() => setVerifying(false)} />
+        ) : (
         <form onSubmit={submit} className="auth-form">
           <h1>Welcome back</h1>
           <p>Log in to edit your events and see who's looking.</p>
@@ -48,6 +56,7 @@ export function Login() {
             {busy ? "Logging in…" : "Log in"}
           </button>
         </form>
+        )}
         <p className="auth-switch">
           New here? <Link to="/signup">Claim your page</Link>
         </p>

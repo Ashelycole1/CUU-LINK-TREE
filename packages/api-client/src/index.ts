@@ -1,5 +1,5 @@
 export { EventTreeClient, type ImageBody } from "./EventTreeClient";
-export { NeonAuthSession, friendlyAuthMessage, type AuthUser, type SessionStore } from "./NeonAuthSession";
+export { EMAIL_NOT_VERIFIED, NeonAuthSession, friendlyAuthMessage, type AuthUser, type SessionStore } from "./NeonAuthSession";
 export { HttpTransport, type FetchLike, type TransportOptions } from "./HttpTransport";
 export { ApiError } from "./ApiError";
 export { Format } from "./format";
