@@ -10,6 +10,8 @@ export interface EventRepository {
   findByOwner(ownerId: string): Promise<Event[]>;
   /** Slugs are unique per owner, so `/jazzfest/opening-night` and `/runclub/opening-night` can coexist. */
   findBySlug(ownerId: string, slug: string): Promise<Event | null>;
+  /** Every host's events that end after `at` (upcoming and live), for the Community page. */
+  findEndingAfter(at: Date): Promise<Event[]>;
   save(event: Event): Promise<void>;
   delete(id: string): Promise<void>;
 }

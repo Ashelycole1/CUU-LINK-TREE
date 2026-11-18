@@ -1,4 +1,6 @@
 import type {
+  CommunityDTO,
+  CommunityQuery,
   AddImageInput,
   AnalyticsSummaryDTO,
   ClaimPageInput,
@@ -57,6 +59,11 @@ export class EventTreeClient {
   /* ---------- public pages ---------- */
   getThemes(): Promise<ThemePreset[]> {
     return this.http.get("/themes");
+  }
+
+  /** Upcoming events from every host, for the Community page. */
+  getCommunity(query: CommunityQuery = {}): Promise<CommunityDTO> {
+    return this.http.get("/community", { ...query });
   }
 
   getPage(username: string): Promise<TreeDTO> {

@@ -15,6 +15,7 @@ import "./styles/ui.css";
 import "./styles/host.css";
 import "./styles/shell.css";
 import "./styles/event.css";
+import "./styles/community.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

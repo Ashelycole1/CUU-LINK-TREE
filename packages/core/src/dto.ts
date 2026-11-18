@@ -205,6 +205,26 @@ export interface AnalyticsSummaryDTO {
   topEvents: { eventId: string; title: string; clicks: number }[];
 }
 
+/* ---------- community ---------- */
+
+/** One upcoming event on the Community page, with the host it belongs to. */
+export interface CommunityEventDTO {
+  event: EventDTO;
+  host: { username: string; displayName: string; avatarUrl: string; color: string };
+}
+
+/** Upcoming events from every host, soonest first, with a count per category. */
+export interface CommunityDTO {
+  events: CommunityEventDTO[];
+  categories: { name: string; count: number }[];
+}
+
+export interface CommunityQuery {
+  category?: string;
+  q?: string;
+  limit?: number;
+}
+
 /* ---------- inputs ---------- */
 
 export interface CreateEventInput {

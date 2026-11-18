@@ -1,10 +1,10 @@
 import { useState, type FormEvent } from "react";
-import { Icon, LINK_ICONS } from "../ui/Icon";
+import { Icon, LINK_ICONS, categoryIcon } from "../ui/Icon";
 import { CoverArt } from "../ui/Art";
 import { startsIn } from "../../lib/dates";
 import { ImageField } from "../media/ImageField";
 import { IMAGE_SIZES } from "../../lib/upload";
-import { ApiError, type CreateEventInput, type EventDTO, type EventLinkKind } from "@event-tree/api-client";
+import { ApiError, EVENT_CATEGORIES, type CreateEventInput, type EventDTO, type EventLinkKind } from "@event-tree/api-client";
 
 const KINDS: { id: EventLinkKind; label: string }[] = [
   { id: "register", label: "Register" },
@@ -17,8 +17,6 @@ const KINDS: { id: EventLinkKind; label: string }[] = [
   { id: "other", label: "Other" },
 ];
 
-/** Tap-to-fill ideas; any category can still be typed. */
-const CATEGORY_IDEAS = ["Music", "Talks", "Sports", "Party", "Workshop", "Community"];
 
 interface LinkRow {
   label: string;
@@ -120,17 +118,28 @@ export function EventEditor({ event, onSave, onCancel }: Props) {
             Title
             <input value={form.title} onChange={set("title")} required minLength={3} maxLength={120} autoFocus placeholder="Opening Night" />
           </label>
-          <label>
-            Category
-            <input value={form.category} onChange={set("category")} required maxLength={40} placeholder="Music, Talks, Sports" />
-          </label>
-          <div className="ed-chips" aria-label="Category ideas">
-            {CATEGORY_IDEAS.map((c) => (
-              <button type="button" key={c} className={`ui-chip${form.category === c ? " is-selected" : ""}`} onClick={() => setForm((f) => ({ ...f, category: c }))}>
-                {c}
-              </button>
-            ))}
-          </div>
+          <fieldset className="ed-cats">
+            <legend>
+              Category <span className="ed-opt">people filter by this in Community</span>
+            </legend>
+            <div className="ed-chips" role="radiogroup" aria-label="Category">
+              {EVENT_CATEGORIES.map((c, i) => (
+                <label key={c} className={`ui-chip${form.category === c ? " is-selected" : ""}`}>
+                  <input
+                    type="radio"
+                    name="category"
+                    value={c}
+                    checked={form.category === c}
+                    onChange={() => setForm((f) => ({ ...f, category: c }))}
+                    required={i === 0}
+                    className="sr-only"
+                  />
+                  <Icon name={categoryIcon(c)} size={14} />
+                  {c}
+                </label>
+              ))}
+            </div>
+          </fieldset>
           <label>
             <span>
               Description <span className="ed-opt">optional</span>

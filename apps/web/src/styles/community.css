@@ -1,0 +1,87 @@
+/* ---------- Community: upcoming events from every page ---------- */
+.cm { min-height: 100vh; background: var(--bg); color: var(--text); --cm-gutter: max(24px, calc(50vw - 590px)); }
+
+.cm-head { padding: 56px var(--cm-gutter) 24px; }
+.cm-kicker { margin: 0 0 8px; font-size: 14px; font-weight: 800; color: var(--accent-ink); }
+.cm-head h1 { margin: 0; font-size: clamp(44px, 8vw, 88px); font-weight: 800; letter-spacing: -0.045em; line-height: 0.95; }
+.cm-lead { margin: 14px 0 0; font-size: 18px; color: var(--text-muted); max-width: 52ch; }
+
+/* Search and category chips stay in reach while scrolling. */
+.cm-bar {
+  position: sticky; top: 64px; z-index: 20;
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 12px var(--cm-gutter) 14px;
+  background: var(--bg); border-bottom: 1px solid var(--border);
+}
+.cm-search {
+  display: flex; align-items: center; gap: 10px; max-width: 520px; height: 48px; padding: 0 16px;
+  border-radius: var(--radius-pill); background: var(--surface); color: var(--text-subtle);
+}
+.cm-search:focus-within { box-shadow: 0 0 0 2px var(--text); }
+.cm-search input { flex: 1; min-width: 0; border: 0; background: none; color: var(--text); font: inherit; font-size: 16px; outline: none; }
+.cm-chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.cm-chips::-webkit-scrollbar { display: none; }
+.cm-chips .ui-chip { flex: none; height: 36px; padding: 0 14px; cursor: pointer; }
+
+.cm-body { padding: 8px var(--cm-gutter) 80px; }
+.cm-group { padding-top: 32px; }
+.cm-h2 { display: flex; align-items: center; gap: 4px; margin: 0 0 16px; font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
+.cm-h2 > span:not(.live-pip) { margin-left: 6px; color: var(--text-subtle); font-weight: 700; }
+
+.cm-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 24px 16px; }
+
+/* Album-style card: square art with a date leaf, then title, time, place and host. */
+.cm-card {
+  display: flex; flex-direction: column; gap: 12px; height: 100%; padding: 12px;
+  border-radius: var(--radius-lg); color: inherit; text-decoration: none;
+  transition: background-color var(--dur-fast) ease;
+}
+.cm-card:hover { background: var(--surface); }
+.cm-card:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.cm-art { position: relative; aspect-ratio: 1; border-radius: var(--radius-md); overflow: hidden; background: var(--host-tint, var(--surface)); box-shadow: var(--art-shadow); }
+.cm-art .cover-art { width: 100% !important; height: 100% !important; }
+.cm-art .cover-art svg { width: 36%; height: 36%; }
+.cm-date {
+  position: absolute; left: 10px; top: 10px; display: flex; flex-direction: column; align-items: center; min-width: 44px; overflow: hidden;
+  border-radius: var(--radius-sm); background: var(--bg-elevated); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+.cm-date span { width: 100%; padding: 2px 0; text-align: center; font-size: 10px; font-weight: 800; text-transform: uppercase; background: var(--accent); color: var(--on-accent); }
+.cm-date b { padding: 2px 0 4px; font-size: 20px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--text); }
+.cm-cat {
+  position: absolute; right: 10px; bottom: 10px; padding: 4px 10px; border-radius: var(--radius-pill);
+  background: rgba(0, 0, 0, 0.6); color: #fff; font-size: 12px; font-weight: 700; backdrop-filter: blur(6px);
+}
+.cm-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.cm-title { font-size: 16px; font-weight: 700; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.cm-when { font-size: 14px; color: var(--text-muted); }
+.cm-when.is-live { color: var(--accent-ink); font-weight: 800; }
+.cm-venue { font-size: 13px; color: var(--text-subtle); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cm-host { display: flex; align-items: center; gap: 8px; margin-top: 4px; font-size: 13px; font-weight: 700; color: var(--text-muted); min-width: 0; }
+
+.cm-card.is-skeleton { pointer-events: none; }
+.cm-card.is-skeleton .cm-art { box-shadow: none; }
+
+.cm-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 72px 24px; text-align: center; color: var(--text-subtle); }
+.cm-empty h2 { margin: 6px 0 0; font-size: 22px; color: var(--text); }
+.cm-empty p { margin: 0 0 8px; }
+
+@media (max-width: 640px) {
+  .cm-head { padding-top: 36px; }
+  .cm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 8px; }
+  .cm-card { padding: 6px; gap: 10px; }
+  .cm-cat { display: none; }
+}
+
+/* Phones: the top bar keeps only the Community link, so it is always one tap away. */
+@media (max-width: 900px) {
+  .site-nav .site-nav-links { display: flex; gap: 0; }
+  .site-nav .site-nav-links a:not([href="/explore"]) { display: none; }
+}
+@media (max-width: 600px) {
+  .site-nav .logo { white-space: nowrap; }
+  .site-nav-actions .btn-ghost { display: none; }
+  .site-nav-actions .btn { min-height: 40px; padding: 0 14px; }
+}
+@media (max-width: 400px) {
+  .site-nav .logo span { display: none; }
+}

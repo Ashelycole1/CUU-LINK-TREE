@@ -28,6 +28,10 @@ export class InMemoryEventRepository implements EventRepository {
     return null;
   }
 
+  async findEndingAfter(at: Date): Promise<Event[]> {
+    return [...this.records.values()].filter((r) => new Date(r.endsAt).getTime() > at.getTime()).map((r) => Event.restore(r));
+  }
+
   async save(event: Event): Promise<void> {
     this.records.set(event.id, event.toRecord());
   }

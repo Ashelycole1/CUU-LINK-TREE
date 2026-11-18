@@ -3,6 +3,7 @@ import {
   ArrowDown,
   ArrowUp,
   CalendarDays,
+  Church,
   Camera,
   Check,
   ChevronDown,
@@ -22,11 +23,13 @@ import {
   MapPin,
   Mic,
   Moon,
+  Palette,
   Music,
   Play,
   Plus,
   Presentation,
   Radio,
+  Search,
   Share,
   Star,
   Ticket,
@@ -34,6 +37,7 @@ import {
   Trophy,
   User,
   Users,
+  Utensils,
   Video,
   Wrench,
   X,
@@ -65,11 +69,15 @@ const LUCIDE = {
   pin: MapPin,
   mic: Mic,
   moon: Moon,
+  palette: Palette,
+  food: Utensils,
+  faith: Church,
   music: Music,
   play: Play,
   plus: Plus,
   slides: Presentation,
   live: Radio,
+  search: Search,
   share: Share,
   star: Star,
   ticket: Ticket,
@@ -153,6 +161,9 @@ export function categoryIcon(category?: string | null): IconName {
   if (/sport|run|match|game|fitness|final/.test(c)) return "trophy";
   if (/party|night|club/.test(c)) return "moon";
   if (/workshop|class|training/.test(c)) return "wrench";
-  if (/community|social|church|charity/.test(c)) return "users";
+  if (/art|film|theat|exhibit|dance|comedy/.test(c)) return "palette";
+  if (/food|dinner|lunch|brunch|cook|tasting|market/.test(c)) return "food";
+  if (/faith|church|worship|prayer|gospel/.test(c)) return "faith";
+  if (/community|social|charity/.test(c)) return "users";
   return "calendar";
 }

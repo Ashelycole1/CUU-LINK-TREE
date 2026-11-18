@@ -2,16 +2,15 @@ import { useState } from "react";
 import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { router, Stack } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ApiError, type EventLinkKind } from "@event-tree/api-client";
+import { ApiError, EVENT_CATEGORIES, type EventLinkKind } from "@event-tree/api-client";
 import { api } from "../../src/lib/api";
 import { flash } from "../../src/lib/flash";
 import { IMAGE_SIZES, pickImage } from "../../src/lib/pickImage";
 import { DateTimeField } from "../../src/ui/DateTimeField";
-import { Icon, LINK_ICONS } from "../../src/ui/Icon";
+import { Icon, LINK_ICONS, categoryIcon } from "../../src/ui/Icon";
 import { Btn, Chip, CoverArt, InlineError, Row, StepHead, TextField } from "../../src/ui/kit";
 import { corner, gap, usePalette } from "../../src/ui/palette";
 
-const CATEGORY_IDEAS = ["Music", "Talks", "Sports", "Party", "Workshop", "Community"];
 const DURATIONS = [1, 2, 3, 4, 6];
 const KINDS: { id: EventLinkKind; label: string }[] = [
   { id: "tickets", label: "Tickets" },
@@ -175,12 +174,25 @@ export default function NewEventScreen() {
         <View style={[s.step, { borderTopWidth: 0 }]}>
           <StepHead n={1} title="What is it?" active={step === 1} />
           <TextField label="Title" value={form.title} onChangeText={set("title")} onFocus={() => setStep(1)} maxLength={120} placeholder="Opening Night" />
-          <TextField label="Category" value={form.category} onChangeText={set("category")} onFocus={() => setStep(1)} maxLength={40} placeholder="Music, Talks, Sports" />
-          <Row>
-            {CATEGORY_IDEAS.map((c) => (
-              <Chip key={c} label={c} selected={form.category === c} onPress={() => setForm((f) => ({ ...f, category: c }))} />
-            ))}
-          </Row>
+          <View style={{ gap: 8 }}>
+            <Text style={{ color: p.text, fontSize: 14, fontWeight: "700" }}>
+              Category <Text style={{ color: p.textSubtle, fontWeight: "500" }}>people filter by this in Community</Text>
+            </Text>
+            <Row>
+              {EVENT_CATEGORIES.map((c) => (
+                <Chip
+                  key={c}
+                  label={c}
+                  icon={categoryIcon(c)}
+                  selected={form.category === c}
+                  onPress={() => {
+                    setStep(1);
+                    setForm((f) => ({ ...f, category: c }));
+                  }}
+                />
+              ))}
+            </Row>
+          </View>
           <TextField
             label="Description"
             optional
@@ -309,7 +321,7 @@ export default function NewEventScreen() {
       {/* The action stays in reach of your thumb. */}
       <View style={[s.bar, { backgroundColor: p.bg, borderTopColor: p.border, paddingBottom: 12 + insets.bottom }]}>
         <Text style={{ flex: 1, color: p.textSubtle, fontSize: 13 }} numberOfLines={2}>
-          {ready ? "Goes to the top of your page." : "Add a title, category and start time."}
+          {ready ? "Goes on your page and in Community." : "Add a title, pick a category and a start time."}
         </Text>
         <Btn title={busy ? "Adding…" : "Add event"} onPress={submit} loading={busy} disabled={!ready || uploading} />
       </View>

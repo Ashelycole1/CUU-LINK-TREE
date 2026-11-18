@@ -2,7 +2,7 @@ import type { Request, Response, Router } from "express";
 import type { AnalyticsService, EventListQuery, EventService, ProfileService } from "@event-tree/core";
 import { Controller } from "../Controller";
 
-/** /pages/:username: a host's public page, its events, and page-view tracking. Plus the theme gallery. */
+/** /community: upcoming events from every host. /pages/:username: a host's public page, its events, and page-view tracking. Plus the theme gallery. */
 export class PublicPageController extends Controller {
   readonly basePath = "/";
 
@@ -16,6 +16,7 @@ export class PublicPageController extends Controller {
 
   protected register(router: Router): void {
     router.get("/themes", this.handle(this.themes));
+    router.get("/community", this.handle(this.community));
     router.get("/pages/:username", this.handle(this.tree));
     router.get("/pages/:username/events", this.handle(this.list));
     router.get("/pages/:username/events/:slug", this.handle(this.show));
@@ -24,6 +25,17 @@ export class PublicPageController extends Controller {
 
   private async themes(_req: Request, res: Response) {
     res.json(this.profiles.themes());
+  }
+
+  private async community(req: Request, res: Response) {
+    const q = req.query;
+    res.json(
+      await this.events.community({
+        category: typeof q.category === "string" ? q.category : undefined,
+        q: typeof q.q === "string" ? q.q : undefined,
+        limit: q.limit ? Number(q.limit) : undefined,
+      }),
+    );
   }
 
   private async tree(req: Request, res: Response) {

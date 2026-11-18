@@ -89,6 +89,15 @@ export class PgEventRepository implements EventRepository {
     return record ? Event.restore(record) : null;
   }
 
+  async findEndingAfter(at: Date): Promise<Event[]> {
+    const records = await docs<EventRecord>(
+      this.pool,
+      "SELECT doc FROM events WHERE (doc->>'endsAt')::timestamptz > $1 AND COALESCE((doc->>'hidden')::boolean, false) = false",
+      [at.toISOString()],
+    );
+    return records.map((r) => Event.restore(r));
+  }
+
   async save(event: Event): Promise<void> {
     const r = event.toRecord();
     await this.pool.query(

@@ -2,6 +2,7 @@ import { Entity } from "../shared/Entity";
 import { BusinessRuleError, ValidationError } from "../shared/errors";
 import { Guard } from "../shared/guards";
 import type { CreateEventInput, EventRecord, EventStatus, UpdateEventInput } from "../dto";
+import { toCategory } from "./categories";
 import { EventLink } from "./EventLink";
 import { ImageLink } from "./ImageLink";
 
@@ -88,7 +89,7 @@ export class Event extends Entity {
     return {
       title: Guard.text(input.title, "Title", { min: 3, max: 120 }),
       description: Guard.optionalText(input.description, "Description", 2000),
-      category: Guard.text(input.category, "Category", { min: 1, max: 40 }),
+      category: toCategory(Guard.text(input.category, "Category", { min: 1, max: 40 })),
       organizer: Guard.optionalText(input.organizer, "Organizer", 80),
       venue: Guard.optionalText(input.venue, "Venue", 120),
       emoji: Guard.optionalText(input.emoji, "Emoji", 8) || "📅",

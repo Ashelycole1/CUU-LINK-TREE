@@ -4,6 +4,8 @@ export { HttpTransport, type FetchLike, type TransportOptions } from "./HttpTran
 export { ApiError } from "./ApiError";
 export { Format } from "./format";
 
+export { EVENT_CATEGORIES, toCategory, type EventCategory } from "@event-tree/core";
+
 // Re-export the DTO types so apps only need this one package.
 export type {
   AddImageInput,
@@ -11,6 +13,9 @@ export type {
   AnalyticsSummaryDTO,
   AppearanceDTO,
   ClaimPageInput,
+  CommunityDTO,
+  CommunityEventDTO,
+  CommunityQuery,
   ButtonStyle,
   FontChoice,
   MeDTO,

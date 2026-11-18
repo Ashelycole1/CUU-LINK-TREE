@@ -116,13 +116,14 @@ export function hashColour(name: string): string {
 }
 
 /** Album-art tile: the poster when there is one, otherwise a colour tile with the category icon. */
-export function CoverArt({ uri, name, category, size, radius = corner.sm }: { uri?: string | null; name: string; category?: string | null; size: number; radius?: number }) {
+export function CoverArt({ uri, name, category, size, radius = corner.sm }: { uri?: string | null; name: string; category?: string | null; size: number | "fill"; radius?: number }) {
+  const box = size === "fill" ? { width: "100%" as const, height: "100%" as const } : { width: size, height: size };
   return (
-    <View style={{ width: size, height: size, borderRadius: radius, overflow: "hidden", backgroundColor: uri ? "#242424" : hashColour(name), alignItems: "center", justifyContent: "center" }}>
+    <View style={{ ...box, borderRadius: radius, overflow: "hidden", backgroundColor: uri ? "#242424" : hashColour(name), alignItems: "center", justifyContent: "center" }}>
       {uri ? (
         <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityIgnoresInvertColors />
       ) : (
-        <Icon name={categoryIcon(category)} size={Math.round(size * 0.4)} color="#ffffff" />
+        <Icon name={categoryIcon(category)} size={size === "fill" ? 56 : Math.round(size * 0.4)} color="#ffffff" />
       )}
     </View>
   );

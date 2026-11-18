@@ -311,3 +311,9 @@ body:has(.shell) { background: var(--canvas); }
   .ed-link input[type="url"] { grid-column: 1 / -1; }
   .ed-link-tools { grid-row: 1; grid-column: 3; }
 }
+
+/* Category: one pick from the fixed list, shown as chips. */
+.ed-cats { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 10px; }
+.ed-cats legend { padding: 0; margin-bottom: 10px; font-size: 14px; font-weight: 700; }
+.ed-cats .ui-chip { position: relative; cursor: pointer; gap: 6px; }
+.ed-cats .ui-chip:has(input:focus-visible) { outline: 2px solid var(--text); outline-offset: 2px; }

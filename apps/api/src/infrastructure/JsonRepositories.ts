@@ -42,6 +42,10 @@ export class JsonEventRepository implements EventRepository {
     return record ? Event.restore(record) : null;
   }
 
+  async findEndingAfter(at: Date): Promise<Event[]> {
+    return (await this.store.read()).filter((r) => new Date(r.endsAt).getTime() > at.getTime()).map((r) => Event.restore(r));
+  }
+
   save(event: Event): Promise<void> {
     const record = event.toRecord();
     return this.store.update((all) => [...all.filter((r) => r.id !== record.id), record]);

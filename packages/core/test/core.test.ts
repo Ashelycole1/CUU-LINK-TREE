@@ -162,7 +162,7 @@ describe("Platform services", () => {
       const tree = await events.tree("jazzfest");
       expect(tree.upcoming.map((e) => e.title)).toEqual(["Opening Night"]);
       expect(tree.past.map((e) => e.title)).toEqual(["Spring Showcase"]);
-      expect(tree.categories).toEqual(["Music", "Theatre"]);
+      expect(tree.categories).toEqual(["Arts", "Music"]);
       expect(await events.listMine(user.id)).toHaveLength(3);
       await expect(events.getPublic("jazzfest", "secret-set")).rejects.toThrow(NotFoundError);
     });
@@ -233,6 +233,36 @@ describe("Platform services", () => {
       expect(summary.series.at(-2)).toEqual({ date: "2026-11-12", views: 2, clicks: 1 });
       expect(summary.series.at(-1)).toEqual({ date: "2026-11-13", views: 1, clicks: 0 });
       expect(summary.topEvents).toEqual([{ eventId: event.id, title: "Opening Night", clicks: 1 }]);
+    });
+  });
+  describe("Community", () => {
+    it("lists upcoming events from every host, soonest first, with category counts", async () => {
+      const a = (await signup("jazzfest")).user;
+      const b = (await signup("runclub")).user;
+      await events.create(a.id, upcoming);
+      await events.create(a.id, past);
+      await events.create(a.id, { ...upcoming, title: "Secret Set", hidden: true });
+      await events.create(b.id, { ...upcoming, title: "Fun Run", category: "marathon", startsAt: "2026-11-14T06:00:00Z", endsAt: "2026-11-14T09:00:00Z" });
+
+      const all = await events.community();
+      expect(all.events.map((x) => x.event.title)).toEqual(["Fun Run", "Opening Night"]);
+      expect(all.events[0]!.host.username).toBe("runclub");
+      expect(all.categories).toEqual([
+        { name: "Music", count: 1 },
+        { name: "Sports", count: 1 },
+      ]);
+
+      const music = await events.community({ category: "music" });
+      expect(music.events.map((x) => x.event.title)).toEqual(["Opening Night"]);
+      expect(music.categories).toHaveLength(2);
+    });
+
+    it("files free-text categories under the fixed list", async () => {
+      const { user } = await signup("jazzfest");
+      const created = await events.create(user.id, { ...upcoming, category: "Live jazz concert" });
+      expect(created.category).toBe("Music");
+      const other = await events.create(user.id, { ...upcoming, title: "Mystery", category: "zzz" });
+      expect(other.category).toBe("Other");
     });
   });
 });

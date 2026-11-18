@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { ClaimForm } from "../components/brand/ClaimForm";
 import { Logo } from "../components/brand/Logo";
+import { SiteNav } from "../components/brand/SiteNav";
 import { HostPage } from "../components/host/HostPage";
 import { samplePage } from "../content/samplePage";
-import { CoverArt, Icon, Stars, ThemeToggle } from "../components/ui";
+import { CoverArt, Icon, Stars } from "../components/ui";
 import { PUBLIC_HOST } from "../lib/config";
 
 /** Seeded local accounts (npm run seed). Production starts empty, so these only show in development. */
@@ -38,30 +39,10 @@ export function Landing() {
       <a className="skip-link" href="#main">
         Skip to content
       </a>
-      <nav className="site-nav" aria-label="Main">
-        <Logo />
-        <div className="site-nav-links">
-          <a href="#how">How it works</a>
-          {DEMOS.length > 0 && <a href="#examples">Examples</a>}
-        </div>
-        <div className="site-nav-actions">
-          <ThemeToggle />
-          {user ? (
-            <Link className="btn btn-primary" to="/admin">
-              Open dashboard
-            </Link>
-          ) : (
-            <>
-              <Link className="btn btn-ghost" to="/login">
-                Log in
-              </Link>
-              <Link className="btn btn-primary" to="/signup">
-                Sign up free
-              </Link>
-            </>
-          )}
-        </div>
-      </nav>
+      <SiteNav>
+        <a href="#how">How it works</a>
+        {DEMOS.length > 0 && <a href="#examples">Examples</a>}
+      </SiteNav>
 
       <header className="lp-hero" id="main" tabIndex={-1}>
         <div className="lp-hero-copy">

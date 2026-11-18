@@ -8,6 +8,7 @@ import { Login } from "./pages/auth/Login";
 import { Signup } from "./pages/auth/Signup";
 import { Landing } from "./pages/Landing";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { CommunityPage } from "./pages/public/CommunityPage";
 import { PublicEventPage } from "./pages/public/PublicEventPage";
 import { PublicPage } from "./pages/public/PublicPage";
 
@@ -33,6 +34,7 @@ export function App() {
         <Route path="appearance" element={<AppearanceAdmin />} />
         <Route path="analytics" element={<AnalyticsAdmin />} />
       </Route>
+      <Route path="/explore" element={<CommunityPage />} />
       <Route path="/:username" element={<PublicPage />} />
       <Route path="/:username/:slug" element={<PublicEventPage />} />
       <Route path="*" element={<NotFoundPage />} />

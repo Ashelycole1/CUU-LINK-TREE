@@ -81,6 +81,22 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
+      {/* Community: what's on across every page. */}
+      <Pressable
+        onPress={() => router.push("/explore")}
+        accessibilityRole="link"
+        style={({ pressed }) => [s.community, { backgroundColor: p.bgElevated, borderColor: p.border, opacity: pressed ? 0.85 : 1 }]}
+      >
+        <View style={[s.stageIcon, { backgroundColor: p.accent }]}>
+          <Icon name="search" size={20} color={p.onAccent} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: p.text, fontSize: 16, fontWeight: "800" }}>See what's on</Text>
+          <Text style={{ color: p.textMuted, fontSize: 14 }}>Upcoming events from every page, by category</Text>
+        </View>
+        <Icon name="chevronRight" size={20} color={p.textSubtle} />
+      </Pressable>
+
       {/* One event, start to finish. */}
       <View style={{ gap: gap.md, marginTop: gap.lg }}>
         <Text style={[s.h2, { color: p.text }]}>One event, start to finish</Text>
@@ -139,6 +155,7 @@ const s = StyleSheet.create({
   claim: { flexDirection: "row", alignItems: "center", height: 60, paddingLeft: 16, paddingRight: 6, borderRadius: corner.pill },
   go: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
   stage: { flexDirection: "row", alignItems: "center", gap: 14 },
+  community: { flexDirection: "row", alignItems: "center", gap: 14, padding: 14, borderRadius: corner.lg, borderWidth: 1 },
   stageIcon: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   demoArt: { width: 148, height: 148, borderRadius: corner.md, alignItems: "center", justifyContent: "center" },
   cta: { height: 56, borderRadius: corner.pill, alignItems: "center", justifyContent: "center", marginTop: gap.md },

@@ -3,6 +3,8 @@ import { slugify } from "../shared/guards";
 import type { Clock, IdGenerator } from "../shared/ports";
 import type {
   AddImageInput,
+  CommunityDTO,
+  CommunityQuery,
   CreateEventInput,
   EventDTO,
   EventListQuery,
@@ -12,6 +14,7 @@ import type {
 import type { ProfileRepository } from "../profile/Profile";
 import type { ReviewRepository } from "../reviews/ReviewRepository";
 import { RatingSummary } from "../reviews/RatingSummary";
+import { EVENT_CATEGORIES } from "./categories";
 import { Event } from "./Event";
 import type { EventRepository } from "./EventRepository";
 import { ImageLink } from "./ImageLink";
@@ -45,6 +48,41 @@ export class EventService {
       past: await this.present(this.filter(visible, { when: "past" }, now), now),
       categories: [...new Set(visible.map((e) => e.category))].sort((a, b) => a.localeCompare(b)),
     };
+  }
+
+  /**
+   * Upcoming and live events from every host, soonest first, for the
+   * Community page. Hidden events and hosts without a page are left out.
+   * Category counts ignore the category filter so every chip shows its total.
+   */
+  async community(query: CommunityQuery = {}): Promise<CommunityDTO> {
+    const now = this.clock.now();
+    const all = (await this.events.findEndingAfter(now)).filter((e) => !e.hidden);
+    const hosts = new Map<string, Awaited<ReturnType<ProfileRepository["findByOwner"]>>>();
+    for (const ownerId of new Set(all.map((e) => e.ownerId))) hosts.set(ownerId, await this.profiles.findByOwner(ownerId));
+    const listed = all.filter((e) => hosts.get(e.ownerId));
+
+    const counts = new Map<string, number>();
+    for (const e of listed) counts.set(e.category, (counts.get(e.category) ?? 0) + 1);
+    const categories = EVENT_CATEGORIES.filter((c) => counts.has(c)).map((name) => ({ name, count: counts.get(name)! }));
+
+    const category = query.category?.trim().toLowerCase();
+    const limit = Math.min(Math.max(query.limit ?? 60, 1), 100);
+    const found = listed
+      .filter((e) => (!category || e.category.toLowerCase() === category) && e.matches(query.q ?? ""))
+      .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime())
+      .slice(0, limit);
+
+    const events = await Promise.all(
+      found.map(async (e) => {
+        const p = hosts.get(e.ownerId)!.toDTO();
+        return {
+          event: await this.presentOne(e, now),
+          host: { username: p.username, displayName: p.displayName, avatarUrl: p.avatarUrl || p.heroImageUrl, color: p.appearance.colors.background },
+        };
+      }),
+    );
+    return { events, categories };
   }
 
   async listPublic(username: string, query: EventListQuery = {}): Promise<EventDTO[]> {

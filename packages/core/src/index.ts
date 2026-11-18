@@ -25,6 +25,7 @@ export {
 
 export { Event } from "./events/Event";
 export { EventLink, EVENT_LINK_KINDS } from "./events/EventLink";
+export { EVENT_CATEGORIES, toCategory, type EventCategory } from "./events/categories";
 export { ImageLink } from "./events/ImageLink";
 export type { EventRepository } from "./events/EventRepository";
 export { EventService } from "./events/EventService";
