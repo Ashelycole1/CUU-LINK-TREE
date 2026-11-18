@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../src/auth/AuthContext";
 import { WEB_HOST } from "../src/lib/api";
-import { brand } from "../src/theme";
+import { brand, radius, space, type } from "../src/theme";
 
 /** Seeded local accounts (npm run seed). Release builds start empty, so these only show in development. */
 const DEMOS = !__DEV__ ? [] : [
@@ -24,8 +24,14 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.logo}>🎟 Event Tree</Text>
+        <View style={styles.logoRow}>
+          <View style={styles.logoMark}>
+            <Text style={styles.logoMarkText}>E</Text>
+          </View>
+          <Text style={styles.logo}>Event Tree</Text>
+        </View>
         <Text style={styles.title}>One link for every event you host.</Text>
+        <Text style={styles.lead}>Open any host's page, or log in to manage yours.</Text>
 
         <View style={styles.claim}>
           <Text style={styles.host} numberOfLines={1}>{WEB_HOST}/</Text>
@@ -42,7 +48,7 @@ export default function HomeScreen() {
             accessibilityLabel="Page to open"
           />
         </View>
-        <Pressable onPress={open} style={[styles.button, { backgroundColor: brand.pink }]} accessibilityRole="button">
+        <Pressable onPress={open} disabled={!name.trim()} style={({ pressed }) => [styles.button, { backgroundColor: brand.pink, opacity: name.trim() ? (pressed ? 0.85 : 1) : 0.5 }]} accessibilityRole="button">
           <Text style={[styles.buttonText, { color: brand.plum }]}>Open page</Text>
         </Pressable>
 
@@ -57,7 +63,7 @@ export default function HomeScreen() {
 
         <Pressable
           onPress={() => router.push(user ? "/dashboard" : "/login")}
-          style={[styles.button, { backgroundColor: brand.plum, marginTop: 28 }]}
+          style={({ pressed }) => [styles.button, { backgroundColor: brand.plum, marginTop: space.xxl, opacity: pressed ? 0.85 : 1 }]}
           accessibilityRole="button"
         >
           <Text style={[styles.buttonText, { color: brand.paper }]}>{user ? `Manage @${user.username}` : "Log in to manage your events"}</Text>
@@ -69,16 +75,20 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: brand.sun },
-  content: { padding: 16, paddingBottom: 48 },
-  logo: { fontSize: 20, fontWeight: "800", color: brand.plum, marginTop: 8 },
-  title: { fontSize: 40, lineHeight: 42, fontWeight: "800", color: brand.plum, marginTop: 24, marginBottom: 24, letterSpacing: -1 },
-  claim: { flexDirection: "row", alignItems: "center", height: 56, paddingHorizontal: 16, borderRadius: 10, backgroundColor: "#ffffff" },
+  content: { padding: space.lg, paddingBottom: 48 },
+  logoRow: { flexDirection: "row", alignItems: "center", gap: space.sm, marginTop: space.sm },
+  logoMark: { width: 32, height: 32, borderRadius: 10, backgroundColor: brand.plum, alignItems: "center", justifyContent: "center" },
+  logoMarkText: { color: brand.sun, fontWeight: "900", fontSize: 18 },
+  logo: { fontSize: 20, fontWeight: "800", color: brand.plum },
+  title: { ...type.display, fontSize: 38, lineHeight: 42, color: brand.plum, marginTop: space.xxl },
+  lead: { ...type.body, color: brand.plum, opacity: 0.8, marginTop: space.md, marginBottom: space.xl },
+  claim: { flexDirection: "row", alignItems: "center", height: 56, paddingHorizontal: space.lg, borderRadius: radius.input, backgroundColor: "#ffffff" },
   host: { color: "#8a7a96", fontWeight: "600", fontSize: 16, maxWidth: "60%" },
   input: { flex: 1, fontSize: 17, fontWeight: "700", color: brand.plum },
-  button: { minHeight: 52, borderRadius: 64, alignItems: "center", justifyContent: "center", marginTop: 10, paddingHorizontal: 20 },
+  button: { minHeight: 52, borderRadius: radius.pill, alignItems: "center", justifyContent: "center", marginTop: space.md, paddingHorizontal: space.xl },
   buttonText: { fontWeight: "800", fontSize: 16 },
   head: { fontSize: 24, fontWeight: "800", color: brand.plum, marginTop: 36, marginBottom: 12 },
-  demo: { borderRadius: 22, padding: 20, marginBottom: 12, gap: 4 },
+  demo: { borderRadius: radius.card, padding: space.xl - 4, marginBottom: space.md, gap: 4 },
   demoName: { fontSize: 22, fontWeight: "800" },
   demoUrl: { fontWeight: "700", marginTop: 14 },
 });
