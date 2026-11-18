@@ -124,5 +124,7 @@ export class Profile {
 export interface ProfileRepository {
   findByOwner(ownerId: string): Promise<Profile | null>;
   findByUsername(username: string): Promise<Profile | null>;
+  /** Every registered page, for the Community directory. */
+  findAll(): Promise<Profile[]>;
   save(profile: Profile): Promise<void>;
 }

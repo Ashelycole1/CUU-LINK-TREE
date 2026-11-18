@@ -204,12 +204,20 @@
 .lp-stats-row > span:last-child { color: var(--text-muted); }
 
 /* Examples shelf */
-.lp-shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
-.lp-shelf-item { display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: var(--radius-md); color: var(--text); text-decoration: none; transition: background-color var(--dur-fast) ease; }
-.lp-shelf-item:hover { background: var(--surface); }
-.lp-shelf-item .cover-art { margin-bottom: 10px; }
-.lp-shelf-item .cover-art svg { width: 36%; height: 36%; }
-.lp-shelf-item span { font-size: 14px; color: var(--text-subtle); }
+/* Every registered page: compact rows, avatar then name and what's next. */
+.lp-totals { margin: 8px 0 0; color: var(--text-muted); font-size: 15px; }
+.lp-totals b { color: var(--text); }
+.lp-pages { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 4px 8px; }
+.lp-page {
+  display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 8px 10px;
+  border-radius: var(--radius-md); color: var(--text); text-decoration: none; transition: background-color var(--dur-fast) ease;
+}
+.lp-page:hover { background: var(--surface); }
+.lp-page-text { display: flex; flex-direction: column; min-width: 0; }
+.lp-page-text > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lp-page-text b { font-size: 14px; }
+.lp-page-text span { font-size: 12px; color: var(--text-subtle); }
+.lp-page-count { padding: 2px 8px; border-radius: var(--radius-pill); background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 800; white-space: nowrap; }
 
 /* Final call */
 .lp-final { padding: 120px var(--gutter); border-top: 1px solid var(--border); display: flex; flex-direction: column; align-items: flex-start; gap: 28px; }

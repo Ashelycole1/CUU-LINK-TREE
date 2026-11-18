@@ -76,6 +76,10 @@ export class PgEventRepository implements EventRepository {
     return record ? Event.restore(record) : null;
   }
 
+  async findAll(): Promise<Event[]> {
+    return (await docs<EventRecord>(this.pool, "SELECT doc FROM events", [])).map((r) => Event.restore(r));
+  }
+
   async findByOwner(ownerId: string): Promise<Event[]> {
     const records = await docs<EventRecord>(this.pool, "SELECT doc FROM events WHERE owner_id = $1", [ownerId]);
     return records.map((r) => Event.restore(r));
@@ -140,6 +144,10 @@ export class PgProfileRepository implements ProfileRepository {
   async findByOwner(ownerId: string): Promise<Profile | null> {
     const [data] = await docs<ProfileDTO>(this.pool, "SELECT doc FROM profiles WHERE owner_id = $1", [ownerId]);
     return data ? Profile.restore(data) : null;
+  }
+
+  async findAll(): Promise<Profile[]> {
+    return (await docs<ProfileDTO>(this.pool, "SELECT doc FROM profiles", [])).map((d) => Profile.restore(d));
   }
 
   async findByUsername(username: string): Promise<Profile | null> {

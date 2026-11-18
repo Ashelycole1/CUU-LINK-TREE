@@ -33,6 +33,10 @@ export class JsonEventRepository implements EventRepository {
     return record ? Event.restore(record) : null;
   }
 
+  async findAll(): Promise<Event[]> {
+    return (await this.store.read()).map((r) => Event.restore(r));
+  }
+
   async findByOwner(ownerId: string): Promise<Event[]> {
     return (await this.store.read()).filter((r) => r.ownerId === ownerId).map((r) => Event.restore(r));
   }
@@ -87,6 +91,10 @@ export class JsonProfileRepository implements ProfileRepository {
   async findByOwner(ownerId: string): Promise<Profile | null> {
     const data = (await this.store.read()).find((p) => p.ownerId === ownerId);
     return data ? Profile.restore(data) : null;
+  }
+
+  async findAll(): Promise<Profile[]> {
+    return (await this.store.read()).map((d) => Profile.restore(d));
   }
 
   async findByUsername(username: string): Promise<Profile | null> {

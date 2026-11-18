@@ -21,8 +21,9 @@ const STATS = [
 /** The marketing home page: claim a name, see what's on, follow one event from announcement to reviews. */
 export function Landing() {
   const { user } = useAuth();
-  const { events, real } = useShowcase();
-  const hosts = real ? [...new Map(events.map((x) => [x.host.username, x])).values()].slice(0, 6) : [];
+  const { events, real, pages, totals } = useShowcase();
+  const next = new Map<string, string>();
+  if (real) for (const x of events) if (!next.has(x.host.username)) next.set(x.host.username, x.event.title);
   const maxViews = Math.max(...STATS.map((s) => s.views));
 
   return (
@@ -32,7 +33,7 @@ export function Landing() {
       </a>
       <SiteNav>
         <a href="#how">How it works</a>
-        {hosts.length > 0 && <a href="#examples">Pages</a>}
+        {pages.length > 0 && <a href="#examples">Pages</a>}
       </SiteNav>
 
       <header className="lp-hero" id="main" tabIndex={-1}>
@@ -184,20 +185,36 @@ export function Landing() {
         </div>
       </section>
 
-      {hosts.length > 0 && (
+      {pages.length > 0 && (
         <section id="examples" className="lp-section" aria-labelledby="examples-title">
           <div className="lp-section-head">
             <h2 id="examples-title">Pages already running</h2>
+            {totals && (
+              <p className="lp-totals">
+                <b>{totals.pages}</b> page{totals.pages === 1 ? "" : "s"} · <b>{totals.events}</b> event{totals.events === 1 ? "" : "s"} posted
+              </p>
+            )}
           </div>
-          <div className="lp-shelf">
-            {hosts.map(({ host, event }) => (
-              <Link key={host.username} to={`/${host.username}`} className="lp-shelf-item">
-                <CoverArt src={host.avatarUrl || null} name={host.displayName} category={event.category} />
-                <b>{host.displayName}</b>
-                <span>Next: {event.title}</span>
-              </Link>
+          <ul className="lp-pages" role="list">
+            {pages.map((p) => (
+              <li key={p.username}>
+                <Link to={`/${p.username}`} className="lp-page">
+                  <CoverArt src={p.avatarUrl || null} name={p.displayName} icon="users" size={40} round />
+                  <span className="lp-page-text">
+                    <b>{p.displayName}</b>
+                    <span>
+                      {next.get(p.username)
+                        ? `Next: ${next.get(p.username)}`
+                        : p.upcoming + p.past === 0
+                          ? "No events yet"
+                          : `${p.past} past event${p.past === 1 ? "" : "s"}`}
+                    </span>
+                  </span>
+                  {p.upcoming > 0 && <span className="lp-page-count">{p.upcoming} up next</span>}
+                </Link>
+              </li>
             ))}
-          </div>
+          </ul>
         </section>
       )}
 

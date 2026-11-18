@@ -257,6 +257,24 @@ describe("Platform services", () => {
       expect(music.categories).toHaveLength(2);
     });
 
+    it("lists every registered page with its event counts, busiest first", async () => {
+      const a = (await signup("jazzfest")).user;
+      const b = (await signup("runclub")).user;
+      await signup("quietpage");
+      await events.create(a.id, upcoming);
+      await events.create(a.id, past);
+      await events.create(a.id, { ...upcoming, title: "Secret Set", hidden: true });
+      await events.create(b.id, { ...past, title: "Old Run" });
+
+      const { pages, totals } = await events.community();
+      expect(pages.map((p) => [p.username, p.upcoming, p.past])).toEqual([
+        ["jazzfest", 1, 1],
+        ["runclub", 0, 1],
+        ["quietpage", 0, 0],
+      ]);
+      expect(totals).toEqual({ events: 3, pages: 3 });
+    });
+
     it("files free-text categories under the fixed list", async () => {
       const { user } = await signup("jazzfest");
       const created = await events.create(user.id, { ...upcoming, category: "Live jazz concert" });

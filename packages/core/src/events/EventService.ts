@@ -82,7 +82,29 @@ export class EventService {
         };
       }),
     );
-    return { events, categories };
+    return { events, categories, ...(await this.directory(now)) };
+  }
+
+  /** Every registered page with its posted-event counts, and site-wide totals. */
+  private async directory(now: Date): Promise<Pick<CommunityDTO, "pages" | "totals">> {
+    const [profiles, all] = await Promise.all([this.profiles.findAll(), this.events.findAll()]);
+    const posted = all.filter((e) => !e.hidden);
+    const counts = new Map<string, { upcoming: number; past: number }>();
+    for (const e of posted) {
+      const c = counts.get(e.ownerId) ?? { upcoming: 0, past: 0 };
+      if (e.endsAt.getTime() > now.getTime()) c.upcoming += 1;
+      else c.past += 1;
+      counts.set(e.ownerId, c);
+    }
+    const pages = profiles
+      .map((profile) => {
+        const p = profile.toDTO();
+        const c = counts.get(p.ownerId) ?? { upcoming: 0, past: 0 };
+        return { username: p.username, displayName: p.displayName, avatarUrl: p.avatarUrl || p.heroImageUrl, color: p.appearance.colors.background, ...c };
+      })
+      .sort((a, b) => Number(b.upcoming > 0) - Number(a.upcoming > 0) || b.upcoming + b.past - (a.upcoming + a.past) || a.displayName.localeCompare(b.displayName));
+    const owners = new Set(profiles.map((p) => p.ownerId));
+    return { pages, totals: { events: posted.filter((e) => owners.has(e.ownerId)).length, pages: pages.length } };
   }
 
   async listPublic(username: string, query: EventListQuery = {}): Promise<EventDTO[]> {

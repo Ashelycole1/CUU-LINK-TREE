@@ -15,6 +15,7 @@ export type {
   ClaimPageInput,
   CommunityDTO,
   CommunityEventDTO,
+  CommunityPageDTO,
   CommunityQuery,
   ButtonStyle,
   FontChoice,

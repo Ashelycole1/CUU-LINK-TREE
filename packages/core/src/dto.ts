@@ -213,10 +213,24 @@ export interface CommunityEventDTO {
   host: { username: string; displayName: string; avatarUrl: string; color: string };
 }
 
-/** Upcoming events from every host, soonest first, with a count per category. */
+/** One registered page in the Community directory, with how many events it has posted. */
+export interface CommunityPageDTO {
+  username: string;
+  displayName: string;
+  avatarUrl: string;
+  color: string;
+  upcoming: number;
+  past: number;
+}
+
+/** Upcoming events from every host, soonest first, with a count per category, plus every registered page. */
 export interface CommunityDTO {
   events: CommunityEventDTO[];
   categories: { name: string; count: number }[];
+  /** Every registered page: those with upcoming events first, then the most active. */
+  pages: CommunityPageDTO[];
+  /** Site-wide totals: every event ever posted (not hidden) and every registered page. */
+  totals: { events: number; pages: number };
 }
 
 export interface CommunityQuery {

@@ -19,6 +19,10 @@ export class InMemoryEventRepository implements EventRepository {
     return record ? Event.restore(record) : null;
   }
 
+  async findAll(): Promise<Event[]> {
+    return [...this.records.values()].map((r) => Event.restore(r));
+  }
+
   async findByOwner(ownerId: string): Promise<Event[]> {
     return [...this.records.values()].filter((r) => r.ownerId === ownerId).map((r) => Event.restore(r));
   }
@@ -63,6 +67,10 @@ export class InMemoryProfileRepository implements ProfileRepository {
   async findByOwner(ownerId: string): Promise<Profile | null> {
     const data = this.byOwner.get(ownerId);
     return data ? Profile.restore(data) : null;
+  }
+
+  async findAll(): Promise<Profile[]> {
+    return [...this.byOwner.values()].map((d) => Profile.restore(d));
   }
 
   async findByUsername(username: string): Promise<Profile | null> {

@@ -12,6 +12,8 @@ export interface EventRepository {
   findBySlug(ownerId: string, slug: string): Promise<Event | null>;
   /** Every host's events that end after `at` (upcoming and live), for the Community page. */
   findEndingAfter(at: Date): Promise<Event[]>;
+  /** Every event from every host, for site-wide counts. */
+  findAll(): Promise<Event[]>;
   save(event: Event): Promise<void>;
   delete(id: string): Promise<void>;
 }
