@@ -29,7 +29,7 @@ export function AnalyticsAdmin() {
         <p>Views count each visit to your page. Clicks count taps on an event.</p>
       </div>
 
-      <div className="filter-row">
+      <div className="filter-row an-filter">
         <div className="segmented" role="radiogroup" aria-label="Date range">
           {RANGES.map((r) => (
             <button key={r} type="button" role="radio" aria-checked={days === r} className={days === r ? "is-selected" : ""} onClick={() => setDays(r)}>
@@ -47,19 +47,23 @@ export function AnalyticsAdmin() {
 
       {s && (
         <>
-          <div className="stat-row">
-            <Stat label="Views" value={compact.format(s.views)} />
-            <Stat label="Clicks" value={compact.format(s.clicks)} />
-            <Stat label="Click rate" value={`${Math.round(s.clickRate * 100)}%`} />
-          </div>
+          <dl className="an-score" aria-label={`Last ${days} days`}>
+            <Stat label="Page views" value={compact.format(s.views)} tone="views" />
+            <Stat label="Event clicks" value={compact.format(s.clicks)} tone="clicks" />
+            <Stat label="Of views led to a click" value={`${Math.round(s.clickRate * 100)}%`} />
+          </dl>
 
-          <section className="panel">
-            <h2 className="panel-title">Views and clicks per day</h2>
+          <section className="an-section" aria-labelledby="an-daily">
+            <h2 id="an-daily" className="an-h2">
+              Day by day
+            </h2>
             {asTable ? <DayTable series={s.series} /> : <LineChart series={s.series} />}
           </section>
 
-          <section className="panel">
-            <h2 className="panel-title">Most clicked events</h2>
+          <section className="an-section" aria-labelledby="an-top">
+            <h2 id="an-top" className="an-h2">
+              Most opened events
+            </h2>
             <TopEvents summary={s} />
           </section>
         </>
@@ -68,11 +72,14 @@ export function AnalyticsAdmin() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, tone }: { label: string; value: string; tone?: "views" | "clicks" }) {
   return (
-    <div className="stat">
-      <span className="stat-label">{label}</span>
-      <span className="stat-value">{value}</span>
+    <div className={`an-stat${tone ? ` is-${tone}` : ""}`}>
+      <dd>{value}</dd>
+      <dt>
+        {tone && <span className="legend-key" aria-hidden="true" />}
+        {label}
+      </dt>
     </div>
   );
 }
@@ -228,19 +235,24 @@ function DayTable({ series }: { series: AnalyticsDayDTO[] }) {
 
 function TopEvents({ summary }: { summary: AnalyticsSummaryDTO }) {
   const top = summary.topEvents;
-  if (top.length === 0) return <p className="muted">No clicks in this period yet. Share your page link to get some.</p>;
+  if (top.length === 0) return <p className="muted">No event clicks in this period yet. Put your page link in your bio and they will start to show here.</p>;
   const max = Math.max(...top.map((t) => t.clicks));
   return (
-    <ul className="bar-list">
-      {top.map((t) => (
+    <ol className="an-rank">
+      {top.map((t, i) => (
         <li key={t.eventId} title={`${t.title}: ${full.format(t.clicks)} clicks`}>
-          <span className="bar-name">{t.title}</span>
-          <span className="bar-track">
-            <span className="bar" style={{ width: `${(t.clicks / max) * 100}%` }} />
+          <span className="an-rank-n">{i + 1}</span>
+          <span className="an-rank-main">
+            <b>{t.title}</b>
+            <span className="an-rank-track" aria-hidden="true">
+              <span style={{ width: `${(t.clicks / max) * 100}%` }} />
+            </span>
           </span>
-          <span className="bar-value">{full.format(t.clicks)}</span>
+          <span className="an-rank-v">
+            {full.format(t.clicks)} <span>click{t.clicks === 1 ? "" : "s"}</span>
+          </span>
         </li>
       ))}
-    </ul>
+    </ol>
   );
 }

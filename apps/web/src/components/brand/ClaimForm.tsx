@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { PUBLIC_HOST } from "../../lib/config";
 
 /** "yoursite/ [yourname] [Claim your page]": sends the name on to sign-up. */
 export function ClaimForm({ size = "large" }: { size?: "large" | "small" }) {
   const navigate = useNavigate();
   const [name, setName] = useState("");
-  const host = window.location.host;
+  const host = PUBLIC_HOST;
 
   function submit(e: FormEvent) {
     e.preventDefault();
@@ -26,7 +27,7 @@ export function ClaimForm({ size = "large" }: { size?: "large" | "small" }) {
           maxLength={30}
         />
       </label>
-      <button className="btn btn-pink" type="submit">
+      <button className="btn btn-primary" type="submit">
         Claim your page
       </button>
     </form>

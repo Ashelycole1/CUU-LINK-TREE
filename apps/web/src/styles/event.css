@@ -1,0 +1,235 @@
+/* ---------- event page: one event, laid out along its life ----------
+   Hero (poster, title, when) -> phase rail -> sections in the order that
+   matters right now -> more from the same host. */
+.ep {
+  container-type: inline-size; min-height: 100vh; background: var(--bg); color: var(--text);
+  --ep-gutter: max(24px, calc((100cqi - 1120px) / 2));
+  /* The shared gallery/review markup reads these. */
+  --t-text: var(--text); --t-muted: var(--text-subtle); --t-accent: var(--accent);
+  --t-card: var(--bg-elevated); --t-card-text: var(--text); --glass: var(--surface);
+}
+
+/* Top bar: back to the host, share, theme. */
+.ep-nav {
+  position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  height: 64px; padding: 0 var(--ep-gutter);
+  background: color-mix(in srgb, var(--host-tint) 86%, transparent); backdrop-filter: blur(16px);
+}
+.ep-back {
+  display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 14px 0 6px; margin-left: -6px;
+  border-radius: var(--radius-pill); color: var(--text); font-weight: 700; text-decoration: none;
+}
+.ep-back:hover { background: var(--wash-strong); }
+.ep-back span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40cqi; }
+.ep-nav-actions { display: flex; gap: 4px; }
+
+/* Hero: the poster is the cover; the title is set big in the host's font. */
+.ep-hero {
+  display: grid; grid-template-columns: clamp(200px, 26cqi, 300px) minmax(0, 1fr); align-items: end; gap: 32px;
+  padding: 24px var(--ep-gutter) 32px;
+  background: linear-gradient(180deg, var(--host-tint) 0%, color-mix(in srgb, var(--host-tint) 45%, var(--bg)) 100%);
+}
+.ep-poster { aspect-ratio: 1; border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--art-shadow); background: var(--surface); }
+.ep-poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ep-poster-fallback { width: 100% !important; height: 100%; }
+.ep-poster-fallback svg { width: 34%; height: 34%; }
+.ep-title { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.ep-kind { margin: 0; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; }
+.ep-kind.is-live { color: var(--accent-ink); }
+.ep-title h1 {
+  margin: 0; font-family: var(--host-font, var(--font)); font-weight: 800; letter-spacing: -0.035em; line-height: 0.95;
+  font-size: clamp(36px, 7cqi, 96px); text-wrap: balance; overflow-wrap: anywhere;
+}
+
+/* When: a tear-off calendar leaf next to the day and time. */
+.ep-when { display: flex; align-items: center; gap: 14px; }
+.ep-cal {
+  display: flex; flex-direction: column; align-items: center; width: 56px; flex: none; overflow: hidden;
+  border-radius: var(--radius-md); background: var(--bg-elevated); box-shadow: 0 0 0 1px var(--border);
+}
+.ep-cal span { width: 100%; padding: 3px 0; text-align: center; font-size: 11px; font-weight: 800; background: var(--accent); color: var(--on-accent); }
+.ep-cal b { padding: 4px 0 6px; font-size: 24px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.ep-when-text { display: flex; flex-direction: column; min-width: 0; }
+.ep-when-text b { font-size: 17px; }
+.ep-when-text span { font-size: 14px; color: var(--on-tint); }
+
+/* Body */
+.ep-body { padding: 8px var(--ep-gutter) 48px; background: linear-gradient(180deg, color-mix(in srgb, var(--host-tint) 18%, var(--bg)) 0, var(--bg) 220px); }
+.ep-flow { max-width: 720px; display: flex; flex-direction: column; }
+.ep-block { padding: 32px 0; border-top: 1px solid var(--border); }
+.ep-block:first-child { border-top: 0; padding-top: 8px; }
+.ep-h2, .ep .head { margin: 0 0 20px; font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
+
+/* Phase rail: three steps of one event, joined by a line. */
+.phase-rail { list-style: none; margin: 0 0 24px; padding: 20px 0 24px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 720px; }
+.phase { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding-right: 12px; }
+.phase:not(:last-child)::after {
+  content: ""; position: absolute; top: 11px; left: 32px; right: 8px; height: 2px; border-radius: 1px; background: var(--border-strong);
+}
+.phase.is-done:not(:last-child)::after { background: var(--text-subtle); }
+.phase-dot {
+  position: relative; z-index: 1; flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%;
+  border: 2px solid var(--border-strong); background: var(--bg);
+}
+.phase.is-done .phase-dot { border-color: var(--text-subtle); background: var(--text-subtle); color: var(--bg); }
+.phase.is-now .phase-dot { border-color: var(--accent); background: var(--accent); box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 22%, transparent); }
+.phase.is-now .phase-dot .live-pip { margin: 0; background: var(--on-accent); }
+.phase-text { display: flex; flex-direction: column; gap: 2px; padding-top: 1px; }
+.phase-text b { font-size: 14px; color: var(--text-subtle); }
+.phase.is-done .phase-text b { color: var(--text-muted); }
+.phase.is-now .phase-text b { color: var(--text); }
+.phase-text span { font-size: 13px; color: var(--text-muted); }
+
+/* Countdown */
+.countdown-block { margin-bottom: 24px; }
+.countdown-label { margin: 0 0 10px; font-size: 14px; font-weight: 700; color: var(--text-muted); }
+.countdown-cells { display: flex; gap: 8px; }
+.countdown-cell {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  width: 84px; height: 88px; border-radius: var(--radius-lg); background: var(--surface);
+}
+.countdown-cell b { font-size: 36px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+.countdown-cell span { font-size: 12px; font-weight: 600; color: var(--text-subtle); }
+.ep.is-live .countdown-cell:first-child { display: none; }
+
+/* Links: full-width rows, the primary one in yellow. */
+.ep-links { display: flex; flex-direction: column; gap: 8px; }
+.ep-link {
+  display: grid; grid-template-columns: 24px minmax(0, 1fr) 16px; align-items: center; gap: 14px;
+  width: 100%; min-height: 56px; padding: 0 20px; border: 0; border-radius: var(--radius-pill);
+  background: var(--surface); color: var(--text); font-size: 16px; font-weight: 700; text-align: left; text-decoration: none;
+  transition: background-color var(--dur-fast) ease, transform var(--dur-fast) var(--ease-out);
+}
+.ep-link > svg:last-child { color: var(--text-subtle); }
+.ep-link:hover { background: var(--surface-high); }
+.ep-link.is-primary { background: var(--accent); color: var(--on-accent); }
+.ep-link.is-primary > svg:last-child { color: inherit; opacity: 0.6; }
+.ep-link.is-primary:hover { background: var(--accent-hover); transform: scale(1.01); }
+.ep-link span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Details */
+.ep-facts { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 32px; }
+.ep-facts div { min-width: 0; }
+.ep-facts dt { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; font-size: 13px; font-weight: 600; color: var(--text-subtle); }
+.ep-facts dd { margin: 0; font-size: 16px; font-weight: 600; }
+.ep-about { margin: 28px 0 0; font-size: 17px; line-height: 1.6; color: var(--text-muted); max-width: 64ch; white-space: pre-line; }
+
+/* Photos (ImageGallery markup) */
+.ep-photos .gallery { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+.ep-photos .gallery button { border-radius: var(--radius-md); }
+.ep .muted.center { margin: 0 0 16px; color: var(--text-muted); }
+.ep .inline-form { margin-top: 16px; }
+.ep .inline-form input { border-radius: var(--radius-md); background: var(--surface); color: var(--text); }
+.ep .inline-form input[type="file"]::file-selector-button { background: var(--text); color: var(--bg); font-weight: 700; }
+.ep button.primary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 24px; border: 0;
+  border-radius: var(--radius-pill); background: var(--accent); color: var(--on-accent); font-weight: 800; font-size: 15px;
+}
+.ep button.primary:hover:not(:disabled) { background: var(--accent-hover); }
+.ep button.primary:disabled { opacity: 0.4; }
+
+/* Reviews */
+.ep .rating-summary { gap: 28px; padding: 20px 24px; border-radius: var(--radius-lg); background: var(--surface); }
+.ep .rating-big b { font-size: 56px; letter-spacing: -0.04em; }
+.ep .rating-big .stars { color: var(--accent-ink); }
+.ep .rating-big small { color: var(--text-subtle); }
+.ep .bars { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--text-muted); }
+.ep .bars .bar { background: var(--border-strong); }
+.ep .bars .bar span { background: var(--accent); }
+.ep .bar-label { display: inline-flex; align-items: center; gap: 2px; }
+.ep .card.form {
+  display: flex; flex-direction: column; gap: 16px; margin-top: 16px; padding: 24px;
+  border-radius: var(--radius-lg); background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text);
+}
+.ep .form h3 { margin: 0; font-size: 18px; }
+.ep .form label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 700; }
+.ep .form .muted { color: var(--text-subtle); font-weight: 400; }
+.ep .form input, .ep .form textarea {
+  width: 100%; padding: 12px 14px; border: 0; border-radius: var(--radius-md);
+  background: var(--surface); color: var(--text); font: inherit; font-weight: 400;
+}
+.ep .form :is(input, textarea):focus-visible { outline: 2px solid var(--text); outline-offset: 0; }
+.ep .form button.primary { align-self: flex-start; }
+.ep .star-input { display: flex; flex-wrap: wrap; gap: 2px; margin: 0; padding: 0; border: 0; }
+.ep .star-input legend { width: 100%; margin-bottom: 4px; font-size: 14px; font-weight: 700; }
+.ep .star-input label {
+  display: grid; place-items: center; min-width: 44px; min-height: 44px; cursor: pointer; color: var(--border-strong);
+  transition: color var(--dur-fast) ease, transform var(--dur-fast) var(--ease-out);
+}
+.ep .star-input label.on, .ep .star-input:hover label { color: var(--accent); }
+.ep .star-input label:hover ~ label { color: var(--border-strong); }
+.ep .star-input label:hover { transform: scale(1.12); }
+.ep .star-input label svg { fill: currentColor; }
+.ep .reviews { margin-top: 24px; gap: 0; }
+.ep .reviews li { padding: 18px 0; border-radius: 0; background: none; border-top: 1px solid var(--border); }
+.ep .reviews .stars { color: var(--accent-ink); }
+.ep .reviews p { margin: 8px 0; color: var(--text-muted); line-height: 1.55; }
+.ep .reviews time { color: var(--text-subtle); }
+.ep-locked {
+  margin: 0; display: flex; align-items: center; gap: 10px; padding: 16px 20px;
+  border-radius: var(--radius-lg); border: 1px dashed var(--border-strong); color: var(--text-muted);
+}
+
+/* After the event: reviews lead, so give the score more room. */
+.ep.is-past .ep-flow > .ep-block:first-child { padding-top: 0; }
+
+/* More from the host: a shelf of square tiles. */
+.ep-more { margin-top: 24px; padding-top: 40px; border-top: 1px solid var(--border); }
+.ep-more-list { list-style: none; margin: 0 -12px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 4px; }
+.ep-more-item {
+  display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: var(--radius-md);
+  color: var(--text); text-decoration: none; transition: background-color var(--dur-fast) ease;
+}
+.ep-more-item:hover { background: var(--surface); }
+.ep-more-item .cover-art { margin-bottom: 8px; }
+.ep-more-item .cover-art svg { width: 34%; height: 34%; }
+.ep-more-item b { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ep-more-item span { font-size: 13px; color: var(--text-subtle); }
+.ep-more-item.is-past { opacity: 0.7; }
+
+@container (max-width: 720px) {
+  .ep { --ep-gutter: 16px; }
+  .ep-hero { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-top: 8px; }
+  .ep-poster { width: min(72cqi, 300px); justify-self: center; }
+  .phase-rail { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 12px 0 8px; }
+  .phase { flex-direction: row; gap: 12px; padding: 0 0 18px; }
+  .phase:not(:last-child)::after { top: 24px; bottom: 0; left: 11px; right: auto; width: 2px; height: auto; }
+  .countdown-cells { gap: 6px; }
+  .countdown-cell { flex: 1; width: auto; height: 76px; }
+  .countdown-cell b { font-size: 28px; }
+  .ep-facts { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .ep .rating-summary { flex-direction: column; align-items: stretch; gap: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ep-link, .ep .star-input label { transition: none; }
+  .ep-link.is-primary:hover, .ep .star-input label:hover { transform: none; }
+}
+
+/* Two columns on wide screens: the story on the left, a sticky action card on the right. */
+.ep-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 48px; align-items: start; }
+.ep-main { min-width: 0; }
+.ep-flow { max-width: 680px; }
+.ep-aside { position: sticky; top: 88px; padding-top: 20px; }
+.ep-card { padding: 24px; border-radius: var(--radius-lg); background: var(--bg-elevated); box-shadow: 0 0 0 1px var(--border), var(--art-shadow); }
+.ep-card .countdown-cells { gap: 6px; }
+.ep-card .countdown-cell { flex: 1; width: auto; height: 76px; }
+.ep-card .countdown-cell b { font-size: 28px; }
+.ep-card-score { display: flex; flex-direction: column; gap: 12px; margin-bottom: 8px; }
+.ep-card-score > b { font-size: 56px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+.ep-card-score > span:not(.ep-card-note) { display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 14px; }
+.ep-card-score .ui-stars { color: var(--accent-ink); }
+.ep-card-note { color: var(--text-muted); }
+.ep-card-score .ep-link { margin-top: 8px; }
+.ep-card-score + .ep-links { margin-top: 8px; }
+.ep .muted.center { text-align: left; }
+@container (max-width: 960px) {
+  .ep-grid { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .ep-aside { position: static; order: -1; padding-top: 8px; }
+  .ep-card { padding: 0; background: none; box-shadow: none; }
+  .ep-main { display: contents; }
+  .phase-rail { order: -2; }
+}
+
+/* "(optional)" sits beside its label, not under it. */
+.ep .form label:has(> textarea) { display: block; }
+.ep .form label:has(> textarea) textarea { margin-top: 6px; }

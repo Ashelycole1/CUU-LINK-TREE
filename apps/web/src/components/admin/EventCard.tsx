@@ -1,8 +1,10 @@
-import { Format, type EventDTO } from "@event-tree/api-client";
-import { Icon } from "./Icon";
+import type { EventDTO } from "@event-tree/api-client";
+import { dayNumber, monthShort, whenLine } from "../../lib/dates";
+import { CoverArt, Menu, Stars } from "../ui";
 
 interface Props {
   event: EventDTO;
+  index: number;
   isFirst: boolean;
   isLast: boolean;
   onMove: (direction: -1 | 1) => void;
@@ -14,50 +16,59 @@ interface Props {
 const STATUS: Record<EventDTO["status"], string> = { upcoming: "Upcoming", live: "Live now", past: "Past" };
 
 /**
- * One event in the dashboard list: reorder arrows, title and date, a
- * show/hide switch, edit and delete. Like a link card in Linktree's editor.
+ * One event in the dashboard track list: position, artwork and title, when,
+ * status, a show/hide switch and a menu for edit, reorder and delete.
  */
-export function EventCard({ event, isFirst, isLast, onMove, onToggle, onEdit, onDelete }: Props) {
+export function EventCard({ event, index, isFirst, isLast, onMove, onToggle, onEdit, onDelete }: Props) {
   return (
-    <article className={`event-card${event.hidden ? " is-hidden" : ""}`}>
-      <div className="reorder" aria-label="Reorder">
-        <button type="button" className="icon-btn" onClick={() => onMove(-1)} disabled={isFirst} aria-label={`Move ${event.title} up`}>
-          <Icon name="up" size={16} />
-        </button>
-        <button type="button" className="icon-btn" onClick={() => onMove(1)} disabled={isLast} aria-label={`Move ${event.title} down`}>
-          <Icon name="down" size={16} />
-        </button>
-      </div>
+    <div className={`ev-row is-${event.status}${event.hidden ? " is-hidden" : ""}`} role="row">
+      <span className="ev-index" role="cell">
+        {index + 1}
+      </span>
 
-      <div className="event-card-thumb" aria-hidden="true">
-        {event.coverImage ? <img src={event.coverImage.url} alt="" /> : event.emoji}
-      </div>
-
-      <button type="button" className="event-card-body" onClick={onEdit}>
-        <b>{event.title}</b>
-        <span>
-          {Format.dateRange(event.startsAt, event.endsAt)}
-        </span>
-        <span className="event-card-tags">
-          <span className={`tag tag--${event.status}`}>{STATUS[event.status]}</span>
-          <span className="tag">{event.category}</span>
-          {event.rating.count > 0 && <span className="tag">★ {event.rating.average} ({event.rating.count})</span>}
-          {event.gallery.length > 0 && <span className="tag">{event.gallery.length} photos</span>}
+      <button type="button" className="ev-main" role="cell" onClick={onEdit} aria-label={`Edit ${event.title}`}>
+        <CoverArt src={event.coverImage?.url} name={event.title} category={event.category} size={48} />
+        <span className="ev-text">
+          <b>{event.title}</b>
+          <span>
+            {event.status === "past" && event.rating.count > 0 ? (
+              <>
+                <Stars value={event.rating.average} size={12} /> {event.rating.average.toFixed(1)}, {event.rating.count} review
+                {event.rating.count === 1 ? "" : "s"}
+              </>
+            ) : (
+              event.venue || event.category
+            )}
+          </span>
         </span>
       </button>
 
-      <div className="event-card-actions">
+      <span className="ev-when" role="cell">
+        <span className="ev-date" aria-hidden="true">
+          <b>{dayNumber(event.startsAt)}</b> {monthShort(event.startsAt)}
+        </span>
+        <span className="ev-when-full">{whenLine(event.startsAt)}</span>
+      </span>
+
+      <span className="ev-status" role="cell">
+        {event.hidden ? <span className="ev-pill is-hidden">Hidden</span> : <span className={`ev-pill is-${event.status}`}>{STATUS[event.status]}</span>}
+      </span>
+
+      <span className="ev-actions" role="cell">
         <label className="switch-toggle" title={event.hidden ? "Hidden from your page" : "Shown on your page"}>
           <input type="checkbox" checked={!event.hidden} onChange={onToggle} aria-label={`Show ${event.title} on your page`} />
           <span aria-hidden="true" />
         </label>
-        <button type="button" className="icon-btn" onClick={onEdit} aria-label={`Edit ${event.title}`}>
-          <Icon name="edit" />
-        </button>
-        <button type="button" className="icon-btn danger" onClick={onDelete} aria-label={`Delete ${event.title}`}>
-          <Icon name="trash" />
-        </button>
-      </div>
-    </article>
+        <Menu
+          label={`More for ${event.title}`}
+          items={[
+            { label: "Edit", icon: "edit", onSelect: onEdit },
+            { label: "Move up", icon: "up", onSelect: () => onMove(-1), disabled: isFirst },
+            { label: "Move down", icon: "down", onSelect: () => onMove(1), disabled: isLast },
+            { label: "Delete", icon: "trash", onSelect: onDelete, danger: true },
+          ]}
+        />
+      </span>
+    </div>
   );
 }

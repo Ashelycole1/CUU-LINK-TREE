@@ -1,0 +1,104 @@
+/* ---------- host page (album-page layout) ----------
+   Sized with container queries so the same markup works full-screen and
+   inside the smaller landing-page frame. */
+.host { container-type: inline-size; background: var(--bg); color: var(--text); min-height: 100%; }
+.host:not(.host--preview) { min-height: 100vh; }
+
+.host-head {
+  display: flex; align-items: flex-end; gap: 24px;
+  padding: 72px 32px 24px;
+  background: linear-gradient(180deg, var(--host-tint) 0%, color-mix(in srgb, var(--host-tint) 55%, var(--bg)) 100%);
+  transition: background-color 400ms var(--ease-out);
+}
+.host-art { width: clamp(128px, 24cqi, 232px) !important; box-shadow: var(--art-shadow); }
+.host-art svg { width: 40%; height: 40%; }
+.host-id { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.host-kind { margin: 0; font-size: 14px; font-weight: 600; }
+.host-name {
+  font-family: var(--host-font, var(--font)); font-weight: 800; letter-spacing: -0.03em; line-height: 0.95;
+  font-size: clamp(32px, 8cqi, 88px); margin: 0 0 8px; text-wrap: balance; overflow-wrap: anywhere;
+}
+.host-bio { margin: 0; color: var(--on-tint); font-size: 15px; max-width: 60ch; }
+.host-meta { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 14px; color: var(--on-tint); }
+.host-meta b { color: var(--text); }
+
+.host-body {
+  padding: 24px 32px 48px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--host-tint) 22%, var(--bg)) 0, var(--bg) 240px);
+}
+.host-actions { display: flex; align-items: center; gap: 20px; margin-bottom: 24px; }
+.host-actions-spacer { width: 0; }
+.host-next { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+.host-next span { font-size: 13px; color: var(--text-muted); }
+.host-next b { font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.host-actions-icons { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+
+.host-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+.host-tabs button {
+  height: 32px; padding: 0 14px; border: 0; border-radius: var(--radius-pill);
+  background: var(--surface); color: var(--text); font-weight: 600; font-size: 14px;
+  transition: background-color var(--dur-fast) ease;
+}
+.host-tabs button:hover { background: var(--surface-high); }
+.host-tabs button.is-on { background: var(--text); color: var(--bg); }
+.host-tabs span { margin-left: 4px; opacity: 0.6; font-variant-numeric: tabular-nums; }
+
+.host-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.host-row {
+  display: grid; grid-template-columns: 44px 48px minmax(0, 1fr) 190px; align-items: center; gap: 16px;
+  min-height: 64px; padding: 8px 12px; border-radius: var(--radius-sm);
+  color: var(--text); text-decoration: none; transition: background-color var(--dur-fast) ease;
+}
+.host-row:hover, .host-row:focus-visible { background: var(--surface); }
+.host-row.is-past { opacity: 0.6; }
+.host-row.is-past:hover { opacity: 1; }
+
+/* The date is the artwork: heavy day numeral over a small month. */
+.host-date { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+.host-date b { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.host-date span { margin-top: 4px; font-size: 12px; font-weight: 600; color: var(--text-subtle); }
+.host-row.is-live .host-date b { color: var(--accent-ink); }
+
+.host-row-main { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.host-row-title {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  font-weight: 600; font-size: 16px; line-height: 1.3;
+}
+.host-row-sub { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-subtle); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.host-row-sub .ui-stars { color: var(--text-muted); }
+.host-row-when { font-size: 14px; color: var(--text-muted); text-align: right; white-space: nowrap; }
+.live-pip { display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: var(--accent); vertical-align: 2px; }
+@media (prefers-reduced-motion: no-preference) {
+  .live-pip { animation: pip 1.6s ease-in-out infinite; }
+}
+@keyframes pip { 50% { opacity: 0.35; } }
+
+.host-empty { margin: 32px 0; color: var(--text-muted); }
+.host-foot { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 14px; }
+.host-foot a { color: var(--text-muted); }
+.host-foot a:hover { color: var(--text); }
+
+/* Narrow containers: phones and the landing frame. */
+@container (max-width: 620px) {
+  .host-head { flex-direction: column; align-items: flex-start; padding: 56px 20px 20px; gap: 20px; }
+  .host-art { width: 152px !important; }
+  .host-body { padding: 20px 20px 40px; }
+  .host-row { grid-template-columns: 40px 48px minmax(0, 1fr); gap: 12px; padding: 8px 4px; }
+  .host-row-when { display: none; }
+  .host-actions { gap: 14px; }
+}
+@container (max-width: 380px) {
+  .host-actions-icons .icon-btn:not(:last-child) { display: none; }
+}
+
+/* Landing frame: a compact header so the list shows above the fold. */
+.host--preview .host-head { flex-direction: row; align-items: flex-end; padding: 32px 24px 20px; gap: 20px; }
+.host--preview .host-art { width: 112px !important; }
+.host--preview .host-name { font-size: clamp(30px, 8cqi, 48px); margin-bottom: 4px; }
+.host--preview .host-bio { display: none; }
+.host--preview .host-body { padding: 16px 24px 24px; }
+.host--preview .host-actions { margin-bottom: 16px; }
+
+/* Full-screen pages: keep the content to a readable width. */
+.host:not(.host--preview) .host-head, .host:not(.host--preview) .host-body { padding-inline: max(32px, calc((100cqi - 1120px) / 2)); }
+@container (max-width: 620px) { .host:not(.host--preview) .host-head, .host:not(.host--preview) .host-body { padding-inline: 20px; } }

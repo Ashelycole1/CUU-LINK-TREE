@@ -1,17 +1,11 @@
 import type { SocialLinkDTO } from "@event-tree/api-client";
+import { Icon, SOCIAL_ICONS } from "../ui/Icon";
 
-const LABELS: Record<SocialLinkDTO["platform"], string> = {
-  instagram: "IG",
-  x: "X",
-  linkedin: "in",
-  whatsapp: "WA",
-  youtube: "YT",
-  tiktok: "TT",
-  facebook: "f",
-  website: "🌐",
-};
-
-/** Compact monogram icons; no icon font or brand assets needed. */
+/** A round glass chip with the platform's outline mark; no icon font or brand assets needed. */
 export function SocialIcon({ platform }: { platform: SocialLinkDTO["platform"] }) {
-  return <span className="social-icon">{LABELS[platform]}</span>;
+  return (
+    <span className="social-icon">
+      <Icon name={SOCIAL_ICONS[platform]} size={20} />
+    </span>
+  );
 }

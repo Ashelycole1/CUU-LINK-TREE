@@ -2,19 +2,28 @@ import { useState } from "react";
 import { ApiError, type CreateEventInput, type EventDTO } from "@event-tree/api-client";
 import { EventCard } from "../../components/admin/EventCard";
 import { EventEditor } from "../../components/admin/EventEditor";
-import { api } from "../../lib/api";
+import { api, pageUrl } from "../../lib/api";
+import { useAuth } from "../../auth/AuthContext";
 import { useResource } from "../../lib/useResource";
+import { Icon } from "../../components/ui/Icon";
+import { useDialog } from "../../lib/useDialog";
+import { useToast } from "../../components/ui";
 import { useAdmin } from "./AdminLayout";
 
 /** The main dashboard screen: add, edit, hide, reorder and delete events. */
 export function EventsAdmin() {
   const { refreshPreview } = useAdmin();
+  const { user } = useAuth();
   const events = useResource(() => api.listMyEvents(), []);
   const [editing, setEditing] = useState<string | "new" | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<EventDTO | null>(null);
   const [notice, setNotice] = useState("");
+  const toast = useToast();
 
   const list = events.data ?? [];
+  const shown = list.filter((e) => !e.hidden).length;
+  const live = list.filter((e) => e.status === "live" && !e.hidden).length;
+  const upcoming = list.filter((e) => e.status === "upcoming" && !e.hidden).length;
 
   function done(message: string) {
     setNotice(message);
@@ -36,7 +45,8 @@ export function EventsAdmin() {
     await api.createEvent(input);
     setEditing(null);
     events.reload();
-    done("Event added");
+    refreshPreview();
+    if (user) toast(`"${input.title}" is on your page`, { tone: "success", action: { label: "View", href: pageUrl(user.username).href } });
   }
 
   async function update(event: EventDTO, input: CreateEventInput) {
@@ -56,81 +66,144 @@ export function EventsAdmin() {
 
   return (
     <div className="events-admin">
-      <div className="admin-heading">
-        <h1>Events</h1>
-        <p>Your newest event goes to the top. Use the arrows to change the order on your page.</p>
+      <header className="admin-heading ev-head">
+        <h1>Your events</h1>
+        {events.data && list.length > 0 && (
+          <p className="ev-summary" aria-label="Your page at a glance">
+            {live > 0 && (
+              <span className="ev-summary-live">
+                <span className="live-pip" aria-hidden="true" />
+                {live} live now
+              </span>
+            )}
+            <span>{upcoming} upcoming</span>
+            <span>
+              {shown} of {list.length} shown on your page
+            </span>
+          </p>
+        )}
+      </header>
+
+      <div className="ev-toolbar">
+        <button
+          type="button"
+          className="ev-add"
+          onClick={() => setEditing("new")}
+          aria-expanded={editing === "new"}
+          disabled={editing === "new"}
+        >
+          <span className="ev-add-circle" aria-hidden="true">
+            <Icon name="plus" size={26} />
+          </span>
+          <span className="ev-add-text">
+            <b>Add event</b>
+            <span>It goes to the top of your page</span>
+          </span>
+        </button>
+        <p className="notice" role="status" aria-live="polite">
+          {notice}
+        </p>
       </div>
 
-      {editing === "new" ? (
-        <div className="panel">
+      {editing === "new" && (
+        <div className="panel ev-editor">
           <h2 className="panel-title">New event</h2>
           <EventEditor onSave={create} onCancel={() => setEditing(null)} />
         </div>
-      ) : (
-        <button type="button" className="add-event" onClick={() => setEditing("new")}>
-          + Add event
-        </button>
       )}
 
-      <p className="notice" role="status" aria-live="polite">
-        {notice}
-      </p>
-
-      {events.loading && !events.data && <p className="muted">Loading your events…</p>}
+      {events.loading && !events.data && (
+        <div className="ev-table" role="status" aria-label="Loading your events">
+          {[0, 1, 2].map((i) => (
+            <span key={i} className="skel ev-skel" />
+          ))}
+        </div>
+      )}
       {events.error && <p className="form-error">{events.error.message}</p>}
       {events.data && list.length === 0 && editing !== "new" && (
-        <div className="empty-state">
-          <b>No events yet.</b>
-          <p>Add your first one. It shows up on your page right away.</p>
+        <div className="ev-empty">
+          <b>Your page is waiting for its first event</b>
+          <p>Add one and it shows up on your page straight away, with a countdown to the start.</p>
+          <button type="button" className="btn btn-primary" onClick={() => setEditing("new")}>
+            <Icon name="plus" size={18} /> Add your first event
+          </button>
         </div>
       )}
 
-      <div className="event-cards">
-        {list.map((event, i) =>
-          editing === event.id ? (
-            <div className="panel" key={event.id}>
-              <h2 className="panel-title">Edit event</h2>
-              <EventEditor event={event} onSave={(input) => update(event, input)} onCancel={() => setEditing(null)} />
-            </div>
-          ) : (
-            <EventCard
-              key={event.id}
-              event={event}
-              isFirst={i === 0}
-              isLast={i === list.length - 1}
-              onMove={(d) => move(i, d)}
-              onToggle={() => run(() => api.updateEvent(event.id, { hidden: !event.hidden }), event.hidden ? "Shown on your page" : "Hidden from your page")}
-              onEdit={() => setEditing(event.id)}
-              onDelete={() => setConfirmDelete(event)}
-            />
-          ),
-        )}
-      </div>
+      {list.length > 0 && (
+        <div className="ev-table" role="table" aria-label="Your events">
+          <div className="ev-row ev-row--head" role="row">
+            <span role="columnheader" className="ev-index">
+              #
+            </span>
+            <span role="columnheader">Event</span>
+            <span role="columnheader" className="ev-when">
+              When
+            </span>
+            <span role="columnheader" className="ev-status">
+              Status
+            </span>
+            <span role="columnheader" className="ev-actions">
+              Shown
+            </span>
+          </div>
+          {list.map((event, i) =>
+            editing === event.id ? (
+              <div className="panel ev-editor" key={event.id}>
+                <h2 className="panel-title">Edit event</h2>
+                <EventEditor event={event} onSave={(input) => update(event, input)} onCancel={() => setEditing(null)} />
+              </div>
+            ) : (
+              <EventCard
+                key={event.id}
+                event={event}
+                index={i}
+                isFirst={i === 0}
+                isLast={i === list.length - 1}
+                onMove={(d) => move(i, d)}
+                onToggle={() => run(() => api.updateEvent(event.id, { hidden: !event.hidden }), event.hidden ? "Shown on your page" : "Hidden from your page")}
+                onEdit={() => setEditing(event.id)}
+                onDelete={() => setConfirmDelete(event)}
+              />
+            ),
+          )}
+        </div>
+      )}
 
       {confirmDelete && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="delete-title">
-          <div className="modal">
-            <h2 id="delete-title">Delete “{confirmDelete.title}”?</h2>
-            <p>This removes the event, its photos and its reviews. You can't undo this. To take it off your page for now, hide it instead.</p>
-            <div className="editor-actions">
-              <button type="button" className="btn btn-ghost" onClick={() => setConfirmDelete(null)}>
-                Keep it
-              </button>
-              <button
-                type="button"
-                className="btn btn-danger"
-                onClick={() => {
-                  const target = confirmDelete;
-                  setConfirmDelete(null);
-                  void run(() => api.deleteEvent(target.id), "Event deleted");
-                }}
-              >
-                Delete event
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeleteDialog
+          event={confirmDelete}
+          onCancel={() => setConfirmDelete(null)}
+          onConfirm={() => {
+            const target = confirmDelete;
+            setConfirmDelete(null);
+            void run(() => api.deleteEvent(target.id), "Event deleted");
+          }}
+        />
       )}
+    </div>
+  );
+}
+
+/** Asks before deleting. Escape or a click outside keeps the event; "Keep it" has focus first so Enter is safe. */
+function DeleteDialog({ event, onCancel, onConfirm }: { event: EventDTO; onCancel: () => void; onConfirm: () => void }) {
+  const keep = useDialog<HTMLButtonElement>(true, onCancel);
+  return (
+    <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onCancel()}>
+      <div className="modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-title" aria-describedby="delete-desc">
+        <h2 id="delete-title">Delete “{event.title}”?</h2>
+        <p id="delete-desc">
+          This removes the event, its photos and its reviews. You can't undo this. To take it off your page for now, hide it instead.
+        </p>
+        <div className="editor-actions">
+          <button ref={keep} type="button" className="btn btn-ghost" onClick={onCancel}>
+            Keep it
+          </button>
+          <button type="button" className="btn btn-danger" onClick={onConfirm}>
+            <Icon name="trash" size={18} /> Delete event
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

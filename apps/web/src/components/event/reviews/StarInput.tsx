@@ -1,3 +1,5 @@
+import { Icon } from "../../ui/Icon";
+
 interface Props {
   value: number;
   onChange: (stars: number) => void;
@@ -11,7 +13,7 @@ export function StarInput({ value, onChange }: Props) {
       {[1, 2, 3, 4, 5].map((n) => (
         <label key={n} className={n <= value ? "on" : ""}>
           <input type="radio" name="rating" value={n} checked={value === n} onChange={() => onChange(n)} />
-          <span aria-hidden="true">★</span>
+          <Icon name="star" size={28} />
           <span className="sr-only">
             {n} star{n > 1 ? "s" : ""}
           </span>

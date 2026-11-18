@@ -3,7 +3,9 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ApiError, EMAIL_NOT_VERIFIED, type MeDTO } from "@event-tree/api-client";
 import { useAuth } from "../../auth/AuthContext";
 import { Logo } from "../../components/brand/Logo";
+import { AuthShowcase } from "../../components/auth/AuthShowcase";
 import { VerifyEmailForm } from "../../components/auth/VerifyEmailForm";
+import { PasswordField } from "../../components/ui/PasswordField";
 
 export function Login() {
   const { signIn } = useAuth();
@@ -47,12 +49,10 @@ export function Login() {
             Email
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" autoFocus />
           </label>
-          <label>
-            Password
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
-          </label>
+          <PasswordField label="Password" value={password} onChange={setPassword} autoComplete="current-password" />
           {error && <p className="form-error" role="alert">{error}</p>}
-          <button className="btn btn-dark btn-block" disabled={busy}>
+          <button className="btn btn-primary btn-block" disabled={busy} aria-busy={busy}>
+            {busy && <span className="spinner" aria-hidden="true" />}
             {busy ? "Logging in…" : "Log in"}
           </button>
         </form>
@@ -61,6 +61,7 @@ export function Login() {
           New here? <Link to="/signup">Claim your page</Link>
         </p>
       </div>
+      <AuthShowcase caption="Your page keeps itself current. Upcoming events up top, past ones filed with their photos and reviews." />
     </div>
   );
 }

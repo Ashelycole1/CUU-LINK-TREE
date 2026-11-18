@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import { Format, type ButtonStyle, type EventDTO } from "@event-tree/api-client";
+import { CoverArt } from "../ui/Art";
+import { Icon } from "../ui/Icon";
 
 interface Props {
   event: EventDTO;
@@ -24,7 +26,11 @@ export function EventTicket({ event, username, buttonStyle, onOpen }: Props) {
     event.status === "live"
       ? "Happening now"
       : event.status === "past" && event.rating.count > 0
-        ? `${Format.stars(event.rating.average)} ${event.rating.average} · ${event.rating.count} review${event.rating.count === 1 ? "" : "s"}`
+        ? (
+            <>
+              <Icon name="star" size={13} className="ticket-star" /> {event.rating.average} · {event.rating.count} review{event.rating.count === 1 ? "" : "s"}
+            </>
+          )
         : stub
           ? where
           : [weekday(event.startsAt), where].filter(Boolean).join(" · ");
@@ -37,7 +43,7 @@ export function EventTicket({ event, username, buttonStyle, onOpen }: Props) {
     >
       <span className="ticket-main">
         <span className="ticket-thumb" aria-hidden="true">
-          {event.coverImage ? <img src={event.coverImage.url} alt="" loading="lazy" width={52} height={52} /> : event.emoji}
+          <CoverArt src={event.coverImage?.url} name={event.title} category={event.category} size={52} radius="inherit" />
         </span>
         <span className="ticket-text">
           <span className="ticket-title">{event.title}</span>

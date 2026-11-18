@@ -3,7 +3,10 @@ import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError, EMAIL_NOT_VERIFIED } from "@event-tree/api-client";
 import { useAuth } from "../../auth/AuthContext";
 import { Logo } from "../../components/brand/Logo";
+import { AuthShowcase } from "../../components/auth/AuthShowcase";
 import { VerifyEmailForm } from "../../components/auth/VerifyEmailForm";
+import { PasswordField } from "../../components/ui/PasswordField";
+import { PUBLIC_HOST } from "../../lib/config";
 import { api } from "../../lib/api";
 
 type Availability = { state: "idle" | "checking" | "ok" | "bad"; message?: string };
@@ -34,7 +37,7 @@ export function Signup() {
     const id = window.setTimeout(async () => {
       try {
         const r = await api.checkUsername(name);
-        setAvailability(r.available ? { state: "ok", message: `${window.location.host}/${r.username} is yours to claim.` } : { state: "bad", message: r.reason });
+        setAvailability(r.available ? { state: "ok", message: `${PUBLIC_HOST}/${r.username} is yours to claim.` } : { state: "bad", message: r.reason });
       } catch {
         setAvailability({ state: "bad", message: "Couldn't check that name. Try again." });
       }
@@ -70,7 +73,7 @@ export function Signup() {
     navigate("/admin");
   }
 
-  if (checking) return <p className="loading-note">Loading…</p>;
+  if (checking) return <p className="loading-note" role="status"><span className="spinner" aria-hidden="true" /> Loading…</p>;
   if (user) return <Navigate to="/admin" replace />;
 
   return (
@@ -96,7 +99,7 @@ export function Signup() {
             <h1>Claim your page</h1>
             <p>Pick the name people will see in your link. You can't change it later.</p>
             <label className="claim-field claim-field--boxed">
-              <span className="claim-host">{window.location.host}/</span>
+              <span className="claim-host">{PUBLIC_HOST}/</span>
               <input
                 value={username}
                 onChange={(e) => setUsername(e.target.value.replace(/\s/g, ""))}
@@ -118,7 +121,8 @@ export function Signup() {
               </label>
             )}
             {error && <p className="form-error" role="alert">{error}</p>}
-            <button className="btn btn-dark btn-block" disabled={availability.state !== "ok" || busy}>
+            <button className="btn btn-primary btn-block" disabled={availability.state !== "ok" || busy} aria-busy={busy}>
+              {busy && <span className="spinner" aria-hidden="true" />}
               {identity ? (busy ? "Creating your page…" : "Create my page") : "Continue"}
             </button>
           </form>
@@ -126,7 +130,7 @@ export function Signup() {
           <form onSubmit={submit} className="auth-form">
             <h1>Create your account</h1>
             <p>
-              Your page will be at <b>{window.location.host}/{username.toLowerCase()}</b>.{" "}
+              Your page will be at <b>{PUBLIC_HOST}/{username.toLowerCase()}</b>.{" "}
               <button type="button" className="text-btn" onClick={() => setStep(1)}>
                 Change
               </button>
@@ -139,13 +143,17 @@ export function Signup() {
               Email
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
             </label>
-            <label>
-              Password
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} autoComplete="new-password" />
-              <small>At least 8 characters.</small>
-            </label>
+            <PasswordField
+              label="Password"
+              value={password}
+              onChange={setPassword}
+              autoComplete="new-password"
+              minLength={8}
+              hint="At least 8 characters."
+            />
             {error && <p className="form-error" role="alert">{error}</p>}
-            <button className="btn btn-dark btn-block" disabled={busy}>
+            <button className="btn btn-primary btn-block" disabled={busy} aria-busy={busy}>
+              {busy && <span className="spinner" aria-hidden="true" />}
               {busy ? "Creating your page…" : "Create account"}
             </button>
           </form>
@@ -163,6 +171,7 @@ export function Signup() {
           </p>
         )}
       </div>
+      <AuthShowcase caption="This is what your link will open: your name, your next event, and everything you have hosted." />
     </div>
   );
 }

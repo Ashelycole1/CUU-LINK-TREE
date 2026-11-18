@@ -1,29 +1,54 @@
 /* ---------- log in / sign up ---------- */
 .auth-page {
+  grid-template-columns: minmax(0, 1fr);
   min-height: 100vh; display: grid; place-items: center; padding: 32px 16px;
-  background:
-    radial-gradient(circle at 12% 18%, var(--sun) 0 90px, transparent 91px),
-    radial-gradient(circle at 92% 86%, var(--pink) 0 120px, transparent 121px),
-    var(--paper);
+  background: var(--bg);
 }
 .auth-card {
-  width: min(100%, 460px); padding: 32px; border-radius: var(--r-lg);
-  background: var(--white); border: 2px solid var(--plum); box-shadow: 8px 8px 0 var(--plum);
+  width: min(100%, 400px); min-width: 0; padding: 32px 0; border-radius: var(--r-lg);
+  background: transparent; border: 0; box-shadow: none;
 }
+@media (prefers-reduced-motion: no-preference) {
+  .auth-card { animation: card-in var(--dur-slow) var(--ease-out) both; }
+  .auth-form { animation: fade-in var(--dur) ease both; }
+}
+@keyframes card-in { from { opacity: 0; transform: translateY(12px); } }
+@keyframes fade-in { from { opacity: 0; } }
 .auth-form { display: flex; flex-direction: column; gap: 16px; margin-top: 28px; }
-.auth-form h1 { font-size: 36px; font-weight: 800; }
-.auth-form > p { margin: -6px 0 4px; color: var(--ink-2); }
+.auth-form h1 { font-size: 36px; font-weight: 800; text-wrap: balance; }
+/* Only the intro line under the heading; error and status lines keep their own colours. */
+.auth-form > h1 + p { margin: -6px 0 4px; color: var(--ink-2); }
 
 /* The boxed username field reuses .claim-field; these beat the generic .auth-form label/input rules. */
-.auth-form .claim-field--boxed { flex-direction: row; align-items: center; gap: 0; min-height: 52px; padding: 0 14px; border: 1.5px solid var(--line-strong); }
-.auth-form .claim-field--boxed input { border: 0; min-height: 0; padding: 0; font-weight: 700; box-shadow: none; }
-.auth-form .claim-field--boxed:focus-within { border-color: var(--blue); box-shadow: 0 0 0 3px #3a5cff33; }
+/* flex: none stops the landing page's phone rule (flex-basis: 100%) from stretching this field into a ~360px-tall box inside the column form. */
+.auth-form .claim-field--boxed { flex: none; flex-direction: row; align-items: center; gap: 0; height: 48px; min-height: 48px; padding: 0 14px; border: 0; border-radius: var(--radius-md); background: var(--surface); box-shadow: none; }
+.auth-form .claim-field--boxed input { flex: 1; width: auto; min-width: 0; height: 100%; border: 0; min-height: 0; padding: 0; font-weight: 600; background: none; box-shadow: none; outline: none; }
+.auth-form .claim-field--boxed:focus-within { outline: 2px solid var(--text); }
 
 .field-status { min-height: 1.5em; margin: -8px 0 0; font-size: 14px; font-weight: 600; color: var(--ink-3); }
 .field-status.ok { color: var(--ok); }
 .field-status.bad { color: var(--danger); }
 .auth-switch { margin: 24px 0 0; text-align: center; color: var(--ink-2); }
-.auth-switch a { font-weight: 700; color: var(--blue-deep); }
+.auth-switch a { font-weight: 700; color: var(--text); }
 @media (max-width: 480px) {
-  .auth-card { padding: 24px 20px; box-shadow: 5px 5px 0 var(--plum); }
+  .auth-card { padding: 24px 0; box-shadow: none; }
+  .auth-form h1 { font-size: 30px; }
+}
+
+/* ---------- split layout: form left, example page right ---------- */
+@media (min-width: 1024px) {
+  .auth-page { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); place-items: stretch; padding: 0; }
+  .auth-card { align-self: center; justify-self: center; width: min(100% - 64px, 400px); }
+}
+.auth-side { display: none; }
+@media (min-width: 1024px) {
+  .auth-side {
+    position: relative; display: flex; flex-direction: column; justify-content: center; gap: 24px;
+    margin: 8px; padding: 48px clamp(32px, 5vw, 80px); border-radius: var(--radius-lg);
+    background: var(--canvas); overflow: hidden; min-height: calc(100vh - 16px);
+  }
+  .auth-side-toggle { position: absolute; top: 16px; right: 16px; }
+  .auth-side-frame { border-radius: var(--radius-lg); overflow: hidden; background: var(--bg-elevated); box-shadow: 0 0 0 1px var(--border), var(--art-shadow); }
+  .auth-side-page { height: min(560px, 62vh); overflow: hidden; }
+  .auth-side-caption { margin: 0; max-width: 46ch; font-size: 17px; line-height: 1.5; color: var(--text-muted); }
 }

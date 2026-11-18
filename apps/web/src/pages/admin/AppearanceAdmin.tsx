@@ -1,12 +1,10 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
 import {
   ApiError,
-  type ButtonStyle,
   type FontChoice,
   type ProfileDTO,
   type SocialLinkDTO,
   type SocialPlatform,
-  type ThemeColors,
   type ThemePreset,
   type UpdateProfileInput,
 } from "@event-tree/api-client";
@@ -16,21 +14,9 @@ import { IMAGE_SIZES } from "../../lib/upload";
 import { useResource } from "../../lib/useResource";
 import { FONT_LABELS, FONT_STACKS } from "../../theme/appearance";
 import { useAdmin } from "./AdminLayout";
-
-const BUTTON_STYLES: { id: ButtonStyle; label: string }[] = [
-  { id: "ticket", label: "Ticket stub" },
-  { id: "pill", label: "Pill" },
-  { id: "outline", label: "Outline" },
-  { id: "shadow", label: "Hard shadow" },
-];
-
-const COLOR_FIELDS: { key: keyof ThemeColors; label: string }[] = [
-  { key: "background", label: "Background" },
-  { key: "text", label: "Text" },
-  { key: "card", label: "Buttons" },
-  { key: "cardText", label: "Button text" },
-  { key: "accent", label: "Accent" },
-];
+import { CoverArt, Icon } from "../../components/ui";
+import { SocialIcon } from "../../components/tree/SocialIcon";
+import { headerTint } from "../../lib/dates";
 
 const PLATFORMS: { id: SocialPlatform; label: string }[] = [
   { id: "instagram", label: "Instagram" },
@@ -110,149 +96,142 @@ export function AppearanceAdmin() {
   }
 
   const look = draft.appearance;
+  const photo = draft.avatarUrl || draft.heroImageUrl;
+  const presets = themes.data ?? [];
 
   return (
-    <form className="appearance-admin" onSubmit={save}>
+    <form className="appearance-admin ap" onSubmit={save}>
       <div className="admin-heading">
         <h1>Appearance</h1>
-        <p>Pick a theme, then make it yours. Save to update your live page.</p>
+        <p>Your page colour and font set the mood. Everything else stays clean and readable.</p>
       </div>
 
-      <section className="panel">
-        <h2 className="panel-title">Profile</h2>
-        <div className="profile-edit">
-          <div className="avatar-preview" aria-hidden="true">
-            {draft.avatarUrl ? <img src={draft.avatarUrl} alt="" /> : (draft.displayName || "?").slice(0, 1).toUpperCase()}
-          </div>
-          <div className="editor-grid">
-            <label className="span-2">
-              Page title
-              <input value={draft.displayName} onChange={(e) => patch({ displayName: e.target.value })} required maxLength={60} />
-            </label>
-            <label className="span-2">
-              Bio
-              <textarea value={draft.bio} onChange={(e) => patch({ bio: e.target.value })} rows={2} maxLength={160} />
-              <small className="hint">{draft.bio.length}/160</small>
-            </label>
-            <ImageField label="Profile image" maxSide={IMAGE_SIZES.avatar} value={draft.avatarUrl} onChange={(avatarUrl) => patch({ avatarUrl })} placeholder="Upload, or paste a link" />
-            <ImageField label="Header image" maxSide={IMAGE_SIZES.header} value={draft.heroImageUrl} onChange={(heroImageUrl) => patch({ heroImageUrl })} placeholder="Optional banner behind your name" />
-          </div>
+      {/* Live header: changes show here straight away, before saving. */}
+      <div
+        className="ap-preview"
+        style={{ "--host-tint": headerTint(look.colors.background), "--host-font": FONT_STACKS[look.font] } as CSSProperties}
+        aria-label="Preview of your page header"
+      >
+        <CoverArt src={photo} name={draft.displayName || "?"} icon="users" size={96} />
+        <div className="ap-preview-text">
+          <span>Event page</span>
+          <b>{draft.displayName || "Your page"}</b>
+          {draft.bio && <p>{draft.bio}</p>}
+        </div>
+      </div>
+
+      <section className="ap-section" aria-labelledby="ap-profile">
+        <div className="ap-section-head">
+          <h2 id="ap-profile">Profile</h2>
+          <p>The name and picture at the top of your page.</p>
+        </div>
+        <div className="editor-grid">
+          <label className="span-2">
+            Page title
+            <input value={draft.displayName} onChange={(e) => patch({ displayName: e.target.value })} required maxLength={60} />
+          </label>
+          <label className="span-2">
+            Bio
+            <textarea value={draft.bio} onChange={(e) => patch({ bio: e.target.value })} rows={2} maxLength={160} />
+            <small className="hint">{draft.bio.length}/160</small>
+          </label>
+          <ImageField label="Profile image" maxSide={IMAGE_SIZES.avatar} value={draft.avatarUrl} onChange={(avatarUrl) => patch({ avatarUrl })} placeholder="Upload, or paste a link" />
+          <ImageField label="Header image" maxSide={IMAGE_SIZES.header} value={draft.heroImageUrl} onChange={(heroImageUrl) => patch({ heroImageUrl })} placeholder="Used when there's no profile image" />
         </div>
       </section>
 
-      <section className="panel">
-        <h2 className="panel-title">Themes</h2>
-        {themes.data ? (
-          <div className="theme-grid" role="radiogroup" aria-label="Theme">
-            {themes.data.map((t) => (
-              <button
-                type="button"
-                key={t.id}
-                role="radio"
-                aria-checked={look.themeId === t.id}
-                className={`theme-swatch${look.themeId === t.id ? " is-selected" : ""}`}
-                onClick={() => applyTheme(t)}
-              >
-                <span className="theme-sample" style={{ background: t.colors.background, fontFamily: FONT_STACKS[t.font] }}>
-                  <span className={`sample-btn sample-btn--${t.buttonStyle}`} style={{ background: t.colors.card, color: t.colors.cardText, borderColor: t.colors.cardText }} />
-                  <span className={`sample-btn sample-btn--${t.buttonStyle}`} style={{ background: t.colors.card, color: t.colors.cardText, borderColor: t.colors.cardText }} />
-                  <span className="sample-dot" style={{ background: t.colors.accent }} />
-                </span>
-                <span className="theme-name">{t.name}</span>
-              </button>
-            ))}
-            {look.themeId === "custom" && (
-              <span className="theme-swatch is-selected is-custom">
-                <span className="theme-sample" style={{ background: look.colors.background }} />
-                <span className="theme-name">Custom</span>
-              </span>
-            )}
-          </div>
-        ) : (
-          <p className="muted">Loading themes…</p>
-        )}
-      </section>
-
-      <section className="panel">
-        <h2 className="panel-title">Buttons</h2>
-        <div className="choice-row" role="radiogroup" aria-label="Button style">
-          {BUTTON_STYLES.map((b) => (
+      <section className="ap-section" aria-labelledby="ap-colour">
+        <div className="ap-section-head">
+          <h2 id="ap-colour">Page colour</h2>
+          <p>Tints the top of your page and every event page.</p>
+        </div>
+        <div className="ap-swatches" role="radiogroup" aria-label="Page colour">
+          {presets.map((t) => (
             <button
               type="button"
-              key={b.id}
+              key={t.id}
               role="radio"
-              aria-checked={look.buttonStyle === b.id}
-              className={`choice${look.buttonStyle === b.id ? " is-selected" : ""}`}
-              onClick={() => patchLook({ buttonStyle: b.id })}
+              aria-checked={look.themeId === t.id}
+              className={`ap-swatch${look.themeId === t.id ? " is-selected" : ""}`}
+              onClick={() => applyTheme(t)}
             >
-              <span className={`sample-btn sample-btn--${b.id}`} aria-hidden="true" />
-              {b.label}
+              <span className="ap-swatch-chip" style={{ background: t.colors.background }} aria-hidden="true">
+                {look.themeId === t.id && <Icon name="check" size={18} />}
+              </span>
+              <span>{t.name}</span>
             </button>
           ))}
+          <label className={`ap-swatch ap-swatch--custom${look.themeId === "custom" ? " is-selected" : ""}`}>
+            <span className="ap-swatch-chip" style={{ background: look.colors.background }}>
+              <input
+                type="color"
+                value={look.colors.background}
+                onChange={(e) => patchLook({ themeId: "custom", colors: { ...look.colors, background: e.target.value } })}
+                aria-label="Pick your own colour"
+              />
+              <Icon name="palette" size={18} />
+            </span>
+            <span>Your own</span>
+          </label>
         </div>
+        {!themes.data && <p className="muted">Loading colours…</p>}
+      </section>
 
-        <h3 className="panel-sub">Font</h3>
-        <div className="choice-row" role="radiogroup" aria-label="Font">
+      <section className="ap-section" aria-labelledby="ap-font">
+        <div className="ap-section-head">
+          <h2 id="ap-font">Title font</h2>
+          <p>Used for your page name and event titles.</p>
+        </div>
+        <div className="ap-fonts" role="radiogroup" aria-label="Title font">
           {(Object.keys(FONT_LABELS) as FontChoice[]).map((f) => (
             <button
               type="button"
               key={f}
               role="radio"
               aria-checked={look.font === f}
-              className={`choice${look.font === f ? " is-selected" : ""}`}
+              className={`ap-font${look.font === f ? " is-selected" : ""}`}
               onClick={() => patchLook({ font: f })}
-              style={{ fontFamily: FONT_STACKS[f] }}
             >
-              <span className="font-sample">Aa</span>
-              {FONT_LABELS[f]}
-            </button>
-          ))}
-        </div>
-
-        <h3 className="panel-sub">Colours</h3>
-        <div className="color-grid">
-          {COLOR_FIELDS.map((c) => (
-            <label key={c.key} className="color-field">
-              <input
-                type="color"
-                value={look.colors[c.key]}
-                onChange={(e) => patchLook({ themeId: "custom", colors: { ...look.colors, [c.key]: e.target.value } })}
-              />
-              <span>
-                {c.label}
-                <small>{look.colors[c.key]}</small>
+              <span className="ap-font-sample" style={{ fontFamily: FONT_STACKS[f] }}>
+                {draft.displayName || "Rooftop Sessions"}
               </span>
-            </label>
+              <span className="ap-font-name">{FONT_LABELS[f]}</span>
+            </button>
           ))}
         </div>
       </section>
 
-      <section className="panel">
-        <h2 className="panel-title">Social icons</h2>
-        <p className="muted">Shown as small icons under your bio. Leave a box empty to hide it.</p>
-        <div className="editor-grid">
+      <section className="ap-section" aria-labelledby="ap-social">
+        <div className="ap-section-head">
+          <h2 id="ap-social">Social links</h2>
+          <p>Shown as icons next to the play button. Leave a box empty to hide it.</p>
+        </div>
+        <div className="ap-socials">
           {PLATFORMS.map((p) => (
-            <label key={p.id}>
-              {p.label}
+            <label key={p.id} className="ap-social">
+              <span className="ap-social-icon" aria-hidden="true">
+                <SocialIcon platform={p.id} />
+              </span>
+              <span className="sr-only">{p.label}</span>
               <input
                 type={p.id === "whatsapp" ? "text" : "url"}
                 value={draft.socials.find((s) => s.platform === p.id)?.url ?? ""}
                 onChange={(e) => setSocial(p.id, e.target.value)}
-                placeholder={p.id === "whatsapp" ? "https://wa.me/…" : "https://…"}
+                placeholder={`${p.label} link`}
               />
             </label>
           ))}
         </div>
       </section>
 
-      <div className="save-bar">
+      <div className={`save-bar ap-save${saved ? "" : " is-dirty"}`}>
         <span role="status" aria-live="polite">
           {status || (saved ? "All changes saved" : "You have unsaved changes")}
         </span>
         <button type="button" className="btn btn-ghost" disabled={saved || busy} onClick={() => profile.data && setDraft(draftOf(profile.data))}>
           Discard
         </button>
-        <button className="btn btn-dark" disabled={saved || busy}>
+        <button className="btn btn-primary" disabled={saved || busy}>
           {busy ? "Saving…" : "Save changes"}
         </button>
       </div>
