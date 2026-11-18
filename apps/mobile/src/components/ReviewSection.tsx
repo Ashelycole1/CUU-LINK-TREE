@@ -1,20 +1,33 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { ApiError, Format, type EventDTO, type ReviewDTO } from "@event-tree/api-client";
+import { ApiError, type EventDTO, type ReviewDTO } from "@event-tree/api-client";
 import { api } from "../lib/api";
 import { useResource } from "../lib/useResource";
-import { brand, onBackground, radius, space, useTheme } from "../theme";
-import { Button, ErrorText, Field } from "./Field";
+import { Icon } from "../ui/Icon";
+import { Btn, InlineError, TextField } from "../ui/kit";
+import { corner, usePalette } from "../ui/palette";
+
+/** Five stars, filled up to the rounded value. Decorative; the number next to it carries the meaning. */
+export function Stars({ value, size = 14 }: { value: number; size?: number }) {
+  const p = usePalette();
+  const full = Math.round(value);
+  return (
+    <View style={{ flexDirection: "row", gap: 2 }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Icon key={n} name="star" size={size} color={n <= full ? p.accentInk : p.borderStrong} fill={n <= full ? p.accentInk : "none"} />
+      ))}
+    </View>
+  );
+}
 
 interface Props {
   event: EventDTO;
   onChanged: () => void;
 }
 
-/** Rating summary, the review form and the list of reviews for one event. */
+/** The review form and the list of reviews for one event. */
 export function ReviewSection({ event, onChanged }: Props) {
-  const theme = useTheme();
-  const c = onBackground(theme);
+  const p = usePalette();
   const reviews = useResource(() => api.listReviews(event.id), [event.id]);
   const [name, setName] = useState("");
   const [rating, setRating] = useState(0);
@@ -23,7 +36,7 @@ export function ReviewSection({ event, onChanged }: Props) {
   const [busy, setBusy] = useState(false);
 
   if (!event.acceptsReviews) {
-    return <Text style={[styles.note, { color: c.muted }]}>Reviews open once the event starts.</Text>;
+    return <Text style={{ color: p.textSubtle, fontSize: 14 }}>Reviews open once the doors do.</Text>;
   }
 
   async function submit() {
@@ -46,56 +59,49 @@ export function ReviewSection({ event, onChanged }: Props) {
 
   return (
     <View style={{ gap: 14 }}>
-      <View style={[styles.summary, { backgroundColor: c.surface }]}>
-        <Text style={[styles.big, { color: theme.text }]}>{event.rating.count ? event.rating.average.toFixed(1) : "–"}</Text>
-        <View>
-          <Text style={{ color: theme.accent, fontSize: 20 }}>{Format.stars(event.rating.average)}</Text>
-          <Text style={[styles.muted, { color: c.muted }]}>
-            {event.rating.count} review{event.rating.count === 1 ? "" : "s"}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Leave a review</Text>
-        <View style={styles.stars} accessibilityRole="radiogroup" accessibilityLabel="Your rating">
+      <View style={[s.form, { backgroundColor: p.bgElevated, borderColor: p.border }]}>
+        <Text style={{ color: p.text, fontSize: 16, fontWeight: "800" }}>How was it?</Text>
+        <View style={s.stars} accessibilityRole="radiogroup" accessibilityLabel="Your rating">
           {[1, 2, 3, 4, 5].map((n) => (
-            <Pressable key={n} onPress={() => setRating(n)} accessibilityRole="radio" accessibilityState={{ checked: rating === n }} accessibilityLabel={`${n} stars`} hitSlop={4} style={styles.star}>
-              <Text style={{ fontSize: 34, lineHeight: 40, color: n <= rating ? theme.accent : brand.line }}>★</Text>
+            <Pressable
+              key={n}
+              onPress={() => setRating(n)}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: rating === n }}
+              accessibilityLabel={`${n} star${n === 1 ? "" : "s"}`}
+              hitSlop={2}
+              style={({ pressed }) => [s.star, { transform: [{ scale: pressed ? 0.88 : 1 }] }]}
+            >
+              <Icon name="star" size={32} color={n <= rating ? p.accent : p.borderStrong} fill={n <= rating ? p.accent : "none"} strokeWidth={1.75} />
             </Pressable>
           ))}
         </View>
-        <Field label="Your name" value={name} onChangeText={setName} maxLength={60} />
-        <Field label="What did you think? (optional)" value={comment} onChangeText={setComment} maxLength={1000} multiline />
-        <ErrorText>{error}</ErrorText>
-        <Button title={busy ? "Posting…" : "Post review"} onPress={submit} loading={busy} />
+        <TextField label="Your name" value={name} onChangeText={setName} maxLength={60} />
+        <TextField label="What did you think?" optional value={comment} onChangeText={setComment} maxLength={1000} multiline />
+        <InlineError>{error}</InlineError>
+        <Btn title={busy ? "Posting…" : "Post review"} onPress={submit} loading={busy} />
       </View>
 
       {(reviews.data ?? []).map((r: ReviewDTO) => (
-        <View key={r.id} style={[styles.review, { backgroundColor: c.surface }]}>
-          <View style={styles.reviewHead}>
-            <Text style={[styles.author, { color: theme.text }]} numberOfLines={1}>{r.authorName}</Text>
-            <Text style={{ color: theme.accent }}>{Format.stars(r.rating)}</Text>
+        <View key={r.id} style={[s.review, { borderBottomColor: p.border }]}>
+          <View style={s.head}>
+            <Text style={{ color: p.text, fontWeight: "800", fontSize: 15, flexShrink: 1 }} numberOfLines={1}>
+              {r.authorName}
+            </Text>
+            <Stars value={r.rating} />
           </View>
-          {!!r.comment && <Text style={[styles.body, { color: theme.text }]}>{r.comment}</Text>}
-          <Text style={[styles.muted, { color: c.muted }]}>{new Date(r.createdAt).toLocaleDateString()}</Text>
+          {!!r.comment && <Text style={{ color: p.textMuted, fontSize: 15, lineHeight: 22 }}>{r.comment}</Text>}
+          <Text style={{ color: p.textSubtle, fontSize: 12 }}>{new Date(r.createdAt).toLocaleDateString()}</Text>
         </View>
       ))}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  note: { textAlign: "center", fontSize: 15 },
-  summary: { flexDirection: "row", alignItems: "center", gap: space.lg, padding: space.lg, borderRadius: radius.card },
-  big: { fontSize: 40, fontWeight: "800" },
-  muted: { fontSize: 13 },
-  card: { backgroundColor: brand.white, borderRadius: radius.card, padding: space.lg + 2, gap: space.md },
-  cardTitle: { fontSize: 17, fontWeight: "800", color: brand.plum },
-  stars: { flexDirection: "row", gap: 2 },
+const s = StyleSheet.create({
+  form: { gap: 14, padding: 16, borderRadius: corner.lg, borderWidth: 1 },
+  stars: { flexDirection: "row", gap: 4 },
   star: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
-  review: { padding: space.lg, borderRadius: radius.card, gap: 6 },
-  reviewHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.md },
-  author: { fontWeight: "800", fontSize: 15, flexShrink: 1 },
-  body: { fontSize: 15, lineHeight: 22 },
+  review: { gap: 6, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
+  head: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 },
 });

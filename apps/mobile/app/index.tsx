@@ -1,20 +1,32 @@
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../src/auth/AuthContext";
 import { WEB_HOST } from "../src/lib/api";
-import { brand, radius, space, type } from "../src/theme";
+import { Icon, type IconName } from "../src/ui/Icon";
+import { hashColour } from "../src/ui/kit";
+import { corner, gap, usePalette } from "../src/ui/palette";
 
 /** Seeded local accounts (npm run seed). Release builds start empty, so these only show in development. */
-const DEMOS = !__DEV__ ? [] : [
-  { username: "buildersmeetup", name: "Builders Meetup", what: "Talks, hack weekends, career nights", bg: brand.blue, fg: "#ffffff" },
-  { username: "nightandsong", name: "Night & Song", what: "Live music and late-night culture", bg: brand.plum, fg: brand.paper },
-  { username: "sunrisesports", name: "Sunrise Sports Club", what: "Fun runs and finals days", bg: brand.pink, fg: brand.plum },
+const DEMOS: { username: string; name: string; what: string; icon: IconName }[] = !__DEV__
+  ? []
+  : [
+      { username: "buildersmeetup", name: "Builders Meetup", what: "Talks and hack weekends", icon: "code" },
+      { username: "nightandsong", name: "Night & Song", what: "Live music, late nights", icon: "music" },
+      { username: "sunrisesports", name: "Sunrise Sports Club", what: "Fun runs and finals", icon: "trophy" },
+    ];
+
+const STAGES: { icon: IconName; title: string; body: string }[] = [
+  { icon: "calendar", title: "Announced", body: "Poster, date, tickets. One link to share." },
+  { icon: "live", title: "Doors open", body: "A live countdown flips to Happening now." },
+  { icon: "star", title: "Afterwards", body: "Photos and reviews land on the same page." },
 ];
 
-/** Home: open any host's page by name, or manage your own. */
+/** Home: what Event Tree does, open any host's page, or manage your own. */
 export default function HomeScreen() {
+  const p = usePalette();
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [name, setName] = useState("");
   const open = () => {
@@ -22,73 +34,112 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <View style={styles.logoRow}>
-          <View style={styles.logoMark}>
-            <Text style={styles.logoMarkText}>E</Text>
-          </View>
-          <Text style={styles.logo}>Event Tree</Text>
+    <ScrollView style={{ backgroundColor: p.bg }} contentContainerStyle={[s.content, { paddingTop: insets.top + 12, paddingBottom: 40 + insets.bottom }]} keyboardShouldPersistTaps="handled">
+      <View style={s.brandRow}>
+        <View style={[s.mark, { backgroundColor: p.accent }]}>
+          <Icon name="calendar" size={18} color={p.onAccent} strokeWidth={2.5} />
         </View>
-        <Text style={styles.title}>One link for every event you host.</Text>
-        <Text style={styles.lead}>Open any host's page, or log in to manage yours.</Text>
-
-        <View style={styles.claim}>
-          <Text style={styles.host} numberOfLines={1}>{WEB_HOST}/</Text>
-          <TextInput
-            value={name}
-            onChangeText={(t) => setName(t.replace(/\s/g, ""))}
-            onSubmitEditing={open}
-            placeholder="username"
-            placeholderTextColor="#9a8ca6"
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="go"
-            style={styles.input}
-            accessibilityLabel="Page to open"
-          />
-        </View>
-        <Pressable onPress={open} disabled={!name.trim()} style={({ pressed }) => [styles.button, { backgroundColor: brand.pink, opacity: name.trim() ? (pressed ? 0.85 : 1) : 0.5 }]} accessibilityRole="button">
-          <Text style={[styles.buttonText, { color: brand.plum }]}>Open page</Text>
+        <Text style={{ color: p.text, fontSize: 18, fontWeight: "900" }}>Event Tree</Text>
+        <View style={{ flex: 1 }} />
+        <Pressable onPress={() => router.push(user ? "/dashboard" : "/login")} hitSlop={8} accessibilityRole="button" style={[s.pill, { borderColor: p.borderStrong }]}>
+          <Text style={{ color: p.text, fontWeight: "800", fontSize: 14 }}>{user ? "Your events" : "Log in"}</Text>
         </Pressable>
+      </View>
 
-        {DEMOS.length > 0 && <Text style={styles.head}>Local demo pages</Text>}
-        {DEMOS.map((d) => (
-          <Pressable key={d.username} onPress={() => router.push(`/${d.username}`)} style={[styles.demo, { backgroundColor: d.bg }]} accessibilityRole="link">
-            <Text style={[styles.demoName, { color: d.fg }]}>{d.name}</Text>
-            <Text style={{ color: d.fg, opacity: 0.85 }}>{d.what}</Text>
-            <Text style={[styles.demoUrl, { color: d.fg }]}>/{d.username}</Text>
-          </Pressable>
-        ))}
+      <Text style={[s.h1, { color: p.text }]}>
+        Every event you host.{"\n"}
+        <Text style={{ color: p.accentInk }}>One link.</Text>
+      </Text>
+      <Text style={{ color: p.textMuted, fontSize: 17, lineHeight: 24 }}>A page that follows each event from the announcement to the reviews.</Text>
 
+      {/* Open any page */}
+      <View style={[s.claim, { backgroundColor: p.surface }]}>
+        <Text style={{ color: p.textSubtle, fontSize: 16, fontWeight: "600", maxWidth: "55%" }} numberOfLines={1}>
+          {WEB_HOST}/
+        </Text>
+        <TextInput
+          value={name}
+          onChangeText={(t) => setName(t.replace(/\s/g, ""))}
+          onSubmitEditing={open}
+          placeholder="username"
+          placeholderTextColor={p.textSubtle}
+          selectionColor={p.accent}
+          autoCapitalize="none"
+          autoCorrect={false}
+          returnKeyType="go"
+          style={{ flex: 1, color: p.text, fontSize: 16, fontWeight: "800" }}
+          accessibilityLabel="Page to open"
+        />
         <Pressable
-          onPress={() => router.push(user ? "/dashboard" : "/login")}
-          style={({ pressed }) => [styles.button, { backgroundColor: brand.plum, marginTop: space.xxl, opacity: pressed ? 0.85 : 1 }]}
+          onPress={open}
+          disabled={!name.trim()}
           accessibilityRole="button"
+          accessibilityLabel="Open page"
+          style={[s.go, { backgroundColor: p.accent, opacity: name.trim() ? 1 : 0.4 }]}
         >
-          <Text style={[styles.buttonText, { color: brand.paper }]}>{user ? `Manage @${user.username}` : "Log in to manage your events"}</Text>
+          <Icon name="chevronRight" size={20} color={p.onAccent} strokeWidth={2.5} />
         </Pressable>
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+
+      {/* One event, start to finish. */}
+      <View style={{ gap: gap.md, marginTop: gap.lg }}>
+        <Text style={[s.h2, { color: p.text }]}>One event, start to finish</Text>
+        {STAGES.map((x, i) => (
+          <View key={x.title} style={s.stage}>
+            <View style={[s.stageIcon, { backgroundColor: i === 1 ? p.accent : p.surface }]}>
+              <Icon name={x.icon} size={20} color={i === 1 ? p.onAccent : p.text} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: p.text, fontSize: 16, fontWeight: "800" }}>{x.title}</Text>
+              <Text style={{ color: p.textMuted, fontSize: 14, lineHeight: 20 }}>{x.body}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
+
+      {DEMOS.length > 0 && (
+        <View style={{ gap: gap.md, marginTop: gap.lg }}>
+          <Text style={[s.h2, { color: p.text }]}>Example pages</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+            {DEMOS.map((d) => (
+              <Pressable key={d.username} onPress={() => router.push(`/${d.username}`)} accessibilityRole="link" style={{ width: 148, gap: 6 }}>
+                <View style={[s.demoArt, { backgroundColor: hashColour(d.name) }]}>
+                  <Icon name={d.icon} size={52} color="#ffffff" />
+                </View>
+                <Text style={{ color: p.text, fontWeight: "800", fontSize: 15 }} numberOfLines={1}>
+                  {d.name}
+                </Text>
+                <Text style={{ color: p.textSubtle, fontSize: 13 }} numberOfLines={2}>
+                  {d.what}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
+      <Pressable
+        onPress={() => router.push(user ? "/dashboard" : "/login")}
+        accessibilityRole="button"
+        style={({ pressed }) => [s.cta, { backgroundColor: p.accent, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
+      >
+        <Text style={{ color: p.onAccent, fontWeight: "800", fontSize: 17 }}>{user ? `Manage @${user.username}` : "Get your free page"}</Text>
+      </Pressable>
+    </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: brand.sun },
-  content: { padding: space.lg, paddingBottom: 48 },
-  logoRow: { flexDirection: "row", alignItems: "center", gap: space.sm, marginTop: space.sm },
-  logoMark: { width: 32, height: 32, borderRadius: 10, backgroundColor: brand.plum, alignItems: "center", justifyContent: "center" },
-  logoMarkText: { color: brand.sun, fontWeight: "900", fontSize: 18 },
-  logo: { fontSize: 20, fontWeight: "800", color: brand.plum },
-  title: { ...type.display, fontSize: 38, lineHeight: 42, color: brand.plum, marginTop: space.xxl },
-  lead: { ...type.body, color: brand.plum, opacity: 0.8, marginTop: space.md, marginBottom: space.xl },
-  claim: { flexDirection: "row", alignItems: "center", height: 56, paddingHorizontal: space.lg, borderRadius: radius.input, backgroundColor: "#ffffff" },
-  host: { color: "#8a7a96", fontWeight: "600", fontSize: 16, maxWidth: "60%" },
-  input: { flex: 1, fontSize: 17, fontWeight: "700", color: brand.plum },
-  button: { minHeight: 52, borderRadius: radius.pill, alignItems: "center", justifyContent: "center", marginTop: space.md, paddingHorizontal: space.xl },
-  buttonText: { fontWeight: "800", fontSize: 16 },
-  head: { fontSize: 24, fontWeight: "800", color: brand.plum, marginTop: 36, marginBottom: 12 },
-  demo: { borderRadius: radius.card, padding: space.xl - 4, marginBottom: space.md, gap: 4 },
-  demoName: { fontSize: 22, fontWeight: "800" },
-  demoUrl: { fontWeight: "700", marginTop: 14 },
+const s = StyleSheet.create({
+  content: { paddingHorizontal: gap.lg, gap: gap.xl },
+  brandRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  mark: { width: 32, height: 32, borderRadius: corner.md, alignItems: "center", justifyContent: "center" },
+  pill: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: corner.pill, borderWidth: 1 },
+  h1: { fontSize: 46, lineHeight: 48, fontWeight: "900", letterSpacing: -2, marginTop: gap.xl },
+  h2: { fontSize: 22, fontWeight: "900", letterSpacing: -0.4 },
+  claim: { flexDirection: "row", alignItems: "center", height: 60, paddingLeft: 16, paddingRight: 6, borderRadius: corner.pill },
+  go: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
+  stage: { flexDirection: "row", alignItems: "center", gap: 14 },
+  stageIcon: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  demoArt: { width: 148, height: 148, borderRadius: corner.md, alignItems: "center", justifyContent: "center" },
+  cta: { height: 56, borderRadius: corner.pill, alignItems: "center", justifyContent: "center", marginTop: gap.md },
 });

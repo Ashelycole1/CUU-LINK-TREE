@@ -1,33 +1,27 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Image, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Image, Linking, Pressable, RefreshControl, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import type { EventDTO, SocialLinkDTO } from "@event-tree/api-client";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { LinkButton } from "../../src/components/LinkButton";
-import { api } from "../../src/lib/api";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import type { EventDTO } from "@event-tree/api-client";
+import { api, webUrl } from "../../src/lib/api";
 import { useResource } from "../../src/lib/useResource";
-import { DEFAULT_THEME, ThemeContext, isDark, tokens } from "../../src/theme";
+import { dayNumber, headerTint, monthShort, startsIn, timeShort, weekdayShort } from "../../src/ui/dates";
+import { Icon, SOCIAL_ICONS } from "../../src/ui/Icon";
+import { CoverArt, hashColour } from "../../src/ui/kit";
+import { corner, gap, usePalette } from "../../src/ui/palette";
 
-const SOCIAL_LABELS: Record<SocialLinkDTO["platform"], string> = {
-  instagram: "IG",
-  x: "X",
-  linkedin: "in",
-  whatsapp: "WA",
-  youtube: "YT",
-  tiktok: "TT",
-  facebook: "f",
-  website: "🌐",
-};
-
-/** A host page at /:username, laid out like Linktree: avatar, name, bio, socials, then one button per event. */
-export default function TreeScreen() {
+/**
+ * A host's page, laid out like an album: tinted header with the host's art
+ * and name, a play button that opens the next event, then Upcoming and Past
+ * as a dated track list.
+ */
+export default function HostScreen() {
+  const p = usePalette();
+  const insets = useSafeAreaInsets();
   const { username = "" } = useLocalSearchParams<{ username: string }>();
-  const [showPast, setShowPast] = useState(false);
-
   const page = useResource(() => api.getPage(username), [username]);
-  const theme = page.data?.profile.appearance.colors ?? DEFAULT_THEME;
-  const buttonStyle = page.data?.profile.appearance.buttonStyle ?? "pill";
+  const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
 
   useEffect(() => {
     if (page.data) void api.recordView(username).catch(() => undefined);
@@ -38,133 +32,225 @@ export default function TreeScreen() {
     router.push(`/${username}/${event.slug}`);
   };
 
+  const profile = page.data?.profile;
   const upcoming = page.data?.upcoming ?? [];
   const past = page.data?.past ?? [];
-  const p = page.data?.profile;
-  const photo = p?.avatarUrl || p?.heroImageUrl;
-  const initials = (p?.displayName ?? "")
+  const next = upcoming.find((e) => e.status === "live") ?? upcoming[0];
+  const list = tab === "upcoming" ? upcoming : past;
+  const tint = headerTint(profile?.appearance.colors.background ?? "#5b4b8a", p);
+  const onTint = p.scheme === "dark" ? "rgba(255,255,255,0.8)" : "rgba(18,18,18,0.72)";
+  const photo = profile?.avatarUrl || profile?.heroImageUrl;
+  const name = profile?.displayName ?? username;
+  const initials = name
     .split(/\s+/)
     .map((w) => w[0] ?? "")
     .join("")
     .slice(0, 2)
     .toUpperCase();
-  const muted = isDark(theme.background) ? tokens.muted : "rgba(0,0,0,0.6)";
 
   if (page.error?.isNotFound) {
     return (
-      <SafeAreaView style={[styles.center, { backgroundColor: theme.background }]}>
-        <Text style={[styles.name, { color: theme.text }]}>Nothing here</Text>
-        <Text style={[styles.bio, { color: theme.text }]}>There is no Event Tree at /{username} yet.</Text>
-        <Pressable onPress={() => router.replace("/")} style={[styles.footer, { borderColor: muted }]} accessibilityRole="button">
-          <Text style={[styles.footerText, { color: theme.text }]}>Go home</Text>
+      <View style={[s.center, { backgroundColor: p.bg, paddingTop: insets.top }]}>
+        <Text style={{ color: p.text, fontSize: 24, fontWeight: "900" }}>Nothing here</Text>
+        <Text style={{ color: p.textMuted, fontSize: 15, textAlign: "center" }}>No one has claimed /{username} yet.</Text>
+        <Pressable onPress={() => router.replace("/")} style={[s.ghost, { borderColor: p.borderStrong }]} accessibilityRole="button">
+          <Text style={{ color: p.text, fontWeight: "800" }}>Go home</Text>
         </Pressable>
-      </SafeAreaView>
+      </View>
     );
   }
 
-  const eventButton = (e: EventDTO, dimmed = false) => (
-    <LinkButton
-      key={e.id}
-      label={e.title}
-      variant={buttonStyle}
-      dimmed={dimmed}
-      onPress={() => open(e)}
-      accessibilityLabel={`${e.title}, ${new Date(e.startsAt).toDateString()}`}
-      leading={e.status === "live" ? <View style={[styles.liveDot, { backgroundColor: tokens.live }]} /> : undefined}
-    />
-  );
-
   return (
-    <ThemeContext.Provider value={theme}>
-      <StatusBar style={isDark(theme.background) ? "light" : "dark"} />
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={["top"]}>
-        <ScrollView
-          contentContainerStyle={styles.content}
-          refreshControl={<RefreshControl refreshing={false} onRefresh={page.reload} tintColor={theme.text} />}
-        >
-          <View style={styles.column}>
-            <View style={[styles.avatar, { backgroundColor: theme.card }]}>
-              {photo ? (
-                <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-              ) : (
-                <Text style={[styles.avatarText, { color: theme.cardText }]}>{initials}</Text>
-              )}
-            </View>
-            <Text style={[styles.name, { color: theme.text }]}>{p?.displayName ?? " "}</Text>
-            <Text style={[styles.handle, { color: muted }]}>@{username}</Text>
-            {!!p?.bio && <Text style={[styles.bio, { color: theme.text }]}>{p.bio}</Text>}
-
-            {!!p?.socials.length && (
-              <View style={styles.socials}>
-                {p.socials.map((s) => (
-                  <Pressable
-                    key={s.platform}
-                    onPress={() => void Linking.openURL(s.url)}
-                    accessibilityRole="link"
-                    accessibilityLabel={s.platform}
-                    hitSlop={6}
-                    style={({ pressed }) => [styles.social, { borderColor: theme.text, opacity: pressed ? 0.6 : 1 }]}
-                  >
-                    <Text style={[styles.socialText, { color: theme.text }]}>{SOCIAL_LABELS[s.platform]}</Text>
-                  </Pressable>
-                ))}
-              </View>
+    <View style={{ flex: 1, backgroundColor: p.bg }}>
+      <StatusBar style={p.scheme === "dark" ? "light" : "dark"} />
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 48 + insets.bottom }}
+        refreshControl={<RefreshControl refreshing={false} onRefresh={page.reload} tintColor={p.text} />}
+      >
+        {/* Album header, tinted with the host's colour. */}
+        <View style={[s.header, { backgroundColor: tint, paddingTop: insets.top + 8 }]}>
+          <View style={s.topBar}>
+            {router.canGoBack() ? (
+              <Pressable onPress={() => router.back()} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" style={[s.chrome, { backgroundColor: "rgba(0,0,0,0.25)" }]}>
+                <View style={{ transform: [{ rotate: "180deg" }] }}>
+                  <Icon name="chevronRight" size={20} color="#ffffff" />
+                </View>
+              </Pressable>
+            ) : (
+              <View />
             )}
+          </View>
+          <View style={[s.art, { backgroundColor: hashColour(name) }]}>
+            {photo ? (
+              <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityIgnoresInvertColors />
+            ) : (
+              <Text style={s.initials}>{initials}</Text>
+            )}
+          </View>
+          <Text style={[s.kicker, { color: onTint }]}>Event page</Text>
+          <Text style={[s.name, { color: p.text }]} accessibilityRole="header" numberOfLines={3} adjustsFontSizeToFit>
+            {profile ? name : " "}
+          </Text>
+          {!!profile?.bio && (
+            <Text style={[s.bio, { color: onTint }]} numberOfLines={4}>
+              {profile.bio}
+            </Text>
+          )}
+          <Text style={[s.meta, { color: onTint }]}>
+            <Text style={{ fontWeight: "800", color: p.text }}>@{username}</Text> · {upcoming.length} upcoming · {past.length} past
+          </Text>
+        </View>
 
-            <View style={styles.links}>
-              {page.loading && !page.data && <ActivityIndicator color={theme.text} style={{ marginTop: 24 }} />}
-              {!!page.error && <Text style={styles.error}>{page.error.message}</Text>}
-
-              {upcoming.map((e) => eventButton(e))}
-              {page.data && upcoming.length === 0 && (
-                <Text style={[styles.empty, { color: muted }]}>No upcoming events yet.</Text>
-              )}
-
-              {past.length > 0 && (
+        <View style={s.body}>
+          {/* Actions: play opens the next event. */}
+          <View style={s.actions}>
+            <Pressable
+              onPress={() => next && open(next)}
+              disabled={!next}
+              accessibilityRole="button"
+              accessibilityLabel={next ? `Open the next event, ${next.title}` : "No upcoming events"}
+              style={({ pressed }) => [s.play, { backgroundColor: p.accent, opacity: next ? 1 : 0.4, transform: [{ scale: pressed ? 0.94 : 1 }] }]}
+            >
+              <Icon name="play" size={24} color={p.onAccent} fill={p.onAccent} />
+            </Pressable>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              {next ? (
                 <>
-                  <Pressable
-                    onPress={() => setShowPast((v) => !v)}
-                    accessibilityRole="button"
-                    accessibilityState={{ expanded: showPast }}
-                    style={styles.pastToggle}
-                  >
-                    <Text style={[styles.pastToggleText, { color: theme.text }]}>
-                      {showPast ? "Hide past events" : `Past events (${past.length})`}  {showPast ? "▴" : "▾"}
-                    </Text>
-                  </Pressable>
-                  {showPast && past.map((e) => eventButton(e, true))}
+                  <Text style={{ color: next.status === "live" ? p.accentInk : p.textSubtle, fontSize: 12, fontWeight: "800" }}>
+                    {next.status === "live" ? "Happening now" : "Next up"}
+                  </Text>
+                  <Text style={{ color: p.text, fontSize: 15, fontWeight: "700" }} numberOfLines={1}>
+                    {next.title}
+                  </Text>
+                  <Text style={{ color: p.textSubtle, fontSize: 13 }} numberOfLines={1}>
+                    {startsIn(next.startsAt, next.endsAt)}
+                  </Text>
                 </>
+              ) : (
+                <Text style={{ color: p.textSubtle, fontSize: 14 }}>{page.loading ? " " : "Nothing coming up yet"}</Text>
               )}
             </View>
-
-            <Pressable onPress={() => router.push("/")} style={[styles.footer, { borderColor: muted }]} accessibilityRole="link">
-              <Text style={[styles.footerText, { color: theme.text }]}>Event Tree</Text>
+            <Pressable
+              onPress={() => void Share.share({ message: `${name} on Event Tree\n${webUrl(username)}` })}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Share this page"
+              style={[s.iconBtn, { borderColor: p.borderStrong }]}
+            >
+              <Icon name="share" size={18} color={p.text} />
             </Pressable>
           </View>
-        </ScrollView>
-      </SafeAreaView>
-    </ThemeContext.Provider>
+
+          {!!profile?.socials.length && (
+            <View style={s.socials}>
+              {profile.socials.map((x) => (
+                <Pressable
+                  key={x.platform}
+                  onPress={() => void Linking.openURL(x.url)}
+                  accessibilityRole="link"
+                  accessibilityLabel={x.platform}
+                  hitSlop={4}
+                  style={({ pressed }) => [s.iconBtn, { borderColor: p.border, backgroundColor: pressed ? p.surface : "transparent" }]}
+                >
+                  <Icon name={SOCIAL_ICONS[x.platform]} size={18} color={p.textMuted} />
+                </Pressable>
+              ))}
+            </View>
+          )}
+
+          {/* Upcoming / Past */}
+          <View style={s.tabs} accessibilityRole="tablist">
+            {(["upcoming", "past"] as const).map((t) => {
+              const on = tab === t;
+              const count = t === "upcoming" ? upcoming.length : past.length;
+              return (
+                <Pressable
+                  key={t}
+                  onPress={() => setTab(t)}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: on }}
+                  style={[s.tab, { backgroundColor: on ? p.text : p.surface }]}
+                >
+                  <Text style={{ color: on ? p.bg : p.text, fontWeight: "700", fontSize: 14 }}>
+                    {t === "upcoming" ? "Upcoming" : "Past"} {count > 0 ? count : ""}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {page.loading && !page.data && <ActivityIndicator color={p.text} style={{ marginTop: 24 }} />}
+          {!!page.error && !page.error.isNotFound && <Text style={{ color: p.danger, textAlign: "center" }}>{page.error.message}</Text>}
+          {page.data && list.length === 0 && (
+            <Text style={{ color: p.textSubtle, textAlign: "center", paddingVertical: 24, fontSize: 15 }}>
+              {tab === "upcoming" ? "Nothing coming up. Check back soon." : "No past events yet."}
+            </Text>
+          )}
+
+          {list.map((e) => (
+            <Pressable
+              key={e.id}
+              onPress={() => open(e)}
+              accessibilityRole="link"
+              accessibilityLabel={`${e.title}, ${weekdayShort(e.startsAt)} ${dayNumber(e.startsAt)} ${monthShort(e.startsAt)}${e.status === "live" ? ", happening now" : ""}`}
+              style={({ pressed }) => [s.track, { backgroundColor: pressed ? p.surface : "transparent" }]}
+            >
+              <View style={s.date}>
+                <Text style={{ color: e.status === "live" ? p.accentInk : p.textSubtle, fontSize: 11, fontWeight: "800" }}>{monthShort(e.startsAt).toUpperCase()}</Text>
+                <Text style={{ color: p.text, fontSize: 22, fontWeight: "800", fontVariant: ["tabular-nums"] }}>{dayNumber(e.startsAt)}</Text>
+              </View>
+              <View style={{ opacity: tab === "past" ? 0.75 : 1 }}>
+                <CoverArt uri={e.coverImage?.url} name={e.title} category={e.category} size={52} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ color: p.text, fontSize: 16, fontWeight: "700" }} numberOfLines={1}>
+                  {e.title}
+                </Text>
+                <Text style={{ color: p.textSubtle, fontSize: 13, marginTop: 2 }} numberOfLines={1}>
+                  {e.status === "live" ? <Text style={{ color: p.accentInk, fontWeight: "800" }}>Live now · </Text> : null}
+                  {weekdayShort(e.startsAt)} {timeShort(e.startsAt)}
+                  {e.venue ? ` · ${e.venue}` : ""}
+                </Text>
+              </View>
+              {tab === "past" && e.rating.count > 0 && (
+                <View style={s.rating}>
+                  <Icon name="star" size={13} color={p.accentInk} fill={p.accentInk} />
+                  <Text style={{ color: p.textMuted, fontSize: 13, fontWeight: "700" }}>{e.rating.average.toFixed(1)}</Text>
+                </View>
+              )}
+            </Pressable>
+          ))}
+
+          <Pressable onPress={() => router.push("/")} style={s.footer} accessibilityRole="link">
+            <Text style={{ color: p.textSubtle, fontSize: 13, fontWeight: "700" }}>Made with Event Tree</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-  content: { paddingHorizontal: tokens.gutter, paddingTop: 40, paddingBottom: 48 },
-  column: { width: "100%", maxWidth: 580, alignSelf: "center", alignItems: "center" },
-  avatar: { width: 96, height: 96, borderRadius: 48, overflow: "hidden", alignItems: "center", justifyContent: "center" },
-  avatarText: { fontSize: 32, fontWeight: "700" },
-  name: { fontSize: 22, fontWeight: "700", textAlign: "center", marginTop: 16 },
-  handle: { fontSize: 14, textAlign: "center", marginTop: 2 },
-  bio: { fontSize: 15, textAlign: "center", marginTop: 10, lineHeight: 22, paddingHorizontal: 8 },
-  socials: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 12, marginTop: 18 },
-  social: { width: 40, height: 40, borderRadius: 20, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
-  socialText: { fontSize: 14, fontWeight: "700" },
-  links: { alignSelf: "stretch", marginTop: 32 },
-  liveDot: { width: 8, height: 8, borderRadius: 4 },
-  empty: { textAlign: "center", paddingVertical: 16 },
-  error: { color: tokens.danger, textAlign: "center", marginBottom: 12 },
-  pastToggle: { alignSelf: "center", paddingVertical: 12, paddingHorizontal: 16, marginTop: 4, marginBottom: 10 },
-  pastToggleText: { fontSize: 15, fontWeight: "600" },
-  footer: { marginTop: 36, paddingVertical: 8, paddingHorizontal: 16, borderRadius: tokens.radiusPill, borderWidth: 1 },
-  footerText: { fontSize: 13, fontWeight: "700" },
+const s = StyleSheet.create({
+  center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: 24 },
+  ghost: { marginTop: 8, paddingHorizontal: 20, paddingVertical: 12, borderRadius: corner.pill, borderWidth: 1.5 },
+  header: { paddingHorizontal: gap.lg, paddingBottom: gap.xl, gap: 6 },
+  topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: gap.lg },
+  chrome: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  art: { width: 168, height: 168, borderRadius: corner.md, overflow: "hidden", alignItems: "center", justifyContent: "center", marginBottom: gap.lg, shadowColor: "#000", shadowOpacity: 0.4, shadowRadius: 20, shadowOffset: { width: 0, height: 10 }, elevation: 10 },
+  initials: { color: "#ffffff", fontSize: 56, fontWeight: "900" },
+  kicker: { fontSize: 13, fontWeight: "700" },
+  name: { fontSize: 44, lineHeight: 48, fontWeight: "900", letterSpacing: -1.5 },
+  bio: { fontSize: 15, lineHeight: 21, marginTop: 4 },
+  meta: { fontSize: 13, marginTop: 6 },
+  body: { paddingHorizontal: gap.lg, paddingTop: gap.lg, gap: gap.lg },
+  actions: { flexDirection: "row", alignItems: "center", gap: 14 },
+  play: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center", paddingLeft: 3 },
+  iconBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  socials: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  tabs: { flexDirection: "row", gap: 8, marginTop: 4 },
+  tab: { height: 36, paddingHorizontal: 16, borderRadius: corner.pill, justifyContent: "center" },
+  track: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8, paddingHorizontal: 6, marginHorizontal: -6, borderRadius: corner.md },
+  date: { width: 38, alignItems: "center" },
+  rating: { flexDirection: "row", alignItems: "center", gap: 4 },
+  footer: { alignSelf: "center", paddingVertical: 12, marginTop: gap.xl },
 });
