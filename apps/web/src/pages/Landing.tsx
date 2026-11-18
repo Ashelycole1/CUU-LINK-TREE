@@ -3,8 +3,7 @@ import { useAuth } from "../auth/AuthContext";
 import { ClaimForm } from "../components/brand/ClaimForm";
 import { Logo } from "../components/brand/Logo";
 import { SiteNav } from "../components/brand/SiteNav";
-import { HostPage } from "../components/host/HostPage";
-import { CommunityCard } from "../components/community/CommunityCard";
+import { EventFeed } from "../components/community/EventFeed";
 import { useShowcase } from "../lib/useShowcase";
 import { CoverArt, Icon, Stars } from "../components/ui";
 import { PUBLIC_HOST } from "../lib/config";
@@ -19,12 +18,11 @@ const STATS = [
   { title: "Summer Block Party", views: 591, clicks: 120 },
 ];
 
-/** The marketing home page: claim a name, see a real page, follow one event from announcement to reviews. */
+/** The marketing home page: claim a name, see what's on, follow one event from announcement to reviews. */
 export function Landing() {
   const { user } = useAuth();
-  const { tree: sample, real, events } = useShowcase();
-  const hosts = [...new Map(events.map((x) => [x.host.username, x])).values()].slice(0, 6);
-  const live = events.filter((x) => x.event.status === "live").length;
+  const { events, real } = useShowcase();
+  const hosts = real ? [...new Map(events.map((x) => [x.host.username, x])).values()].slice(0, 6) : [];
   const maxViews = Math.max(...STATS.map((s) => s.views));
 
   return (
@@ -53,51 +51,21 @@ export function Landing() {
           <p className="lp-note">Free, and ready in about a minute.</p>
         </div>
 
-        <figure className="lp-window" aria-label={real ? `${sample.profile.displayName} on Event Tree` : "An example Event Tree page"}>
+        <figure className="lp-window" aria-label={real ? "Events on Event Tree" : "Example events on Event Tree"}>
           <div className="lp-window-bar" aria-hidden="true">
             <span className="lp-window-dots">
               <i />
               <i />
               <i />
             </span>
-            <span className="lp-window-url">
-              {PUBLIC_HOST}/{sample.profile.username}
-            </span>
+            <span className="lp-window-url">{PUBLIC_HOST}/explore</span>
           </div>
           <div className="lp-window-page">
-            <HostPage tree={sample} preview />
+            <EventFeed events={events} />
           </div>
-          {real && (
-            <figcaption className="lp-window-cap">
-              <Link to={`/${sample.profile.username}`}>Open {sample.profile.displayName}'s page</Link>
-            </figcaption>
-          )}
         </figure>
       </header>
 
-      {events.length > 0 && (
-        <section className="lp-section lp-now" aria-labelledby="now-title">
-          <div className="lp-now-head">
-            <div>
-              <h2 id="now-title">
-                {live > 0 && <span className="live-pip" aria-hidden="true" />}
-                {live > 0 ? `${live} on right now, more coming up` : "Coming up on Event Tree"}
-              </h2>
-              <p>Real events from pages on Event Tree.</p>
-            </div>
-            <Link className="btn btn-ghost" to="/explore">
-              See all in Community
-            </Link>
-          </div>
-          <ul className="lp-now-row" role="list">
-            {events.slice(0, 8).map((item) => (
-              <li key={item.event.id}>
-                <CommunityCard item={item} />
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
 
       <section id="how" className="lp-section lp-life" aria-labelledby="life-title">
         <div className="lp-section-head">

@@ -1,39 +1,37 @@
 import { useEffect, useState } from "react";
-import type { CommunityEventDTO, TreeDTO } from "@event-tree/api-client";
+import type { CommunityEventDTO } from "@event-tree/api-client";
 import { samplePage } from "../content/samplePage";
 import { api } from "./api";
 
 export interface Showcase {
-  /** The page shown in the browser-window preview: a real host's page, or the built-in sample until one loads. */
-  tree: TreeDTO;
-  /** True once `tree` is a real host's page. */
-  real: boolean;
-  /** Real upcoming events from every page: live ones first, then soonest. */
+  /** Events to show: live ones first, then soonest. Real ones once loaded. */
   events: CommunityEventDTO[];
+  /** True once `events` are real events from Event Tree pages. */
+  real: boolean;
 }
 
-/**
- * Real content for Event Tree's own pages (landing, log in, sign up). It
- * features the host whose event is on right now, or the next one coming up.
- * The sample page only shows while loading or if no host has events yet.
- */
+/** The built-in sample events, shown only while loading or if no host has upcoming events yet. */
+function sampleEvents(): CommunityEventDTO[] {
+  const tree = samplePage();
+  const p = tree.profile;
+  const host = { username: p.username, displayName: p.displayName, avatarUrl: p.avatarUrl, color: p.appearance.colors.background };
+  return tree.upcoming.map((event) => ({ event, host }));
+}
+
+/** Real upcoming events from every page, for Event Tree's own pages (landing, log in, sign up). */
 export function useShowcase(): Showcase {
-  const [state, setState] = useState<Showcase>(() => ({ tree: samplePage(), real: false, events: [] }));
+  const [state, setState] = useState<Showcase>(() => ({ events: sampleEvents(), real: false }));
 
   useEffect(() => {
     let alive = true;
-    void (async () => {
-      try {
-        const { events } = await api.getCommunity({ limit: 24 });
-        const ordered = [...events.filter((x) => x.event.status === "live"), ...events.filter((x) => x.event.status !== "live")];
-        if (!alive || ordered.length === 0) return;
-        setState((s) => ({ ...s, events: ordered }));
-        const tree = await api.getPage(ordered[0]!.host.username);
-        if (alive) setState({ tree, real: true, events: ordered });
-      } catch {
-        // Keep the sample: the marketing pages must never break because the feed is down.
-      }
-    })();
+    api
+      .getCommunity({ limit: 24 })
+      .then(({ events }) => {
+        if (!alive || events.length === 0) return;
+        const live = events.filter((x) => x.event.status === "live");
+        setState({ events: [...live, ...events.filter((x) => x.event.status !== "live")], real: true });
+      })
+      .catch(() => undefined); // Keep the sample: marketing pages must never break because the feed is down.
     return () => {
       alive = false;
     };
