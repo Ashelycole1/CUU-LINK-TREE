@@ -107,24 +107,36 @@ export function PublicEventPage() {
           </a>
         ))}
         {e.status === "upcoming" && (
-          <button type="button" className="ep-link" aria-expanded={calOpen} aria-controls="ep-cal" onClick={() => setCalOpen((v) => !v)}>
+          <button type="button" className="ep-link" aria-expanded={calOpen} aria-controls="ep-calendars" onClick={() => setCalOpen((v) => !v)}>
             <Icon name="calendar" size={20} />
             <span>Add to calendar</span>
             <Icon name={calOpen ? "up" : "down"} size={16} />
           </button>
         )}
         {e.status === "upcoming" && calOpen && (
-          <div className="ep-cal" id="ep-cal">
-            <a href={googleCalendarUrl(e, url)} target="_blank" rel="noreferrer">
-              Google Calendar
-            </a>
-            <a href={outlookCalendarUrl(e, url)} target="_blank" rel="noreferrer">
-              Outlook
-            </a>
-            <button type="button" onClick={saveToCalendar}>
-              Apple Calendar
-            </button>
-          </div>
+          <ul className="ep-calendars" id="ep-calendars" role="list">
+            <li>
+              <a href={googleCalendarUrl(e, url)} target="_blank" rel="noreferrer">
+                <b>Google Calendar</b>
+                <span>Opens it</span>
+                <Icon name="external" size={16} />
+              </a>
+            </li>
+            <li>
+              <a href={outlookCalendarUrl(e, url)} target="_blank" rel="noreferrer">
+                <b>Outlook</b>
+                <span>Opens it</span>
+                <Icon name="external" size={16} />
+              </a>
+            </li>
+            <li>
+              <button type="button" onClick={saveToCalendar}>
+                <b>Apple Calendar</b>
+                <span>.ics file</span>
+                <Icon name="down" size={16} />
+              </button>
+            </li>
+          </ul>
         )}
       </div>
     </section>

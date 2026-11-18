@@ -224,7 +224,7 @@
 .ep .muted.center { text-align: left; }
 @container (max-width: 960px) {
   .ep-grid { grid-template-columns: minmax(0, 1fr); gap: 0; }
-  .ep-aside { position: static; order: -1; padding-top: 8px; }
+  .ep-aside { position: static; order: -1; padding-top: 8px; padding-bottom: 24px; }
   .ep-card { padding: 0; background: none; box-shadow: none; }
   .ep-main { display: contents; }
   .phase-rail { order: -2; }
@@ -234,14 +234,17 @@
 .ep .form label:has(> textarea) { display: block; }
 .ep .form label:has(> textarea) textarea { margin-top: 6px; }
 
-/* Add to calendar: the apps people actually use, opened straight to a filled-in event. */
-.ep-cal { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-.ep-cal a, .ep-cal button {
-  display: flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 10px;
-  border: 1px solid var(--border-strong); border-radius: var(--radius-pill); background: transparent;
-  color: var(--text); font: inherit; font-size: 13px; font-weight: 700; text-align: center; text-decoration: none; cursor: pointer;
+/* Add to calendar: full-width rows under the button, one per calendar app. */
+.ep-calendars { list-style: none; margin: -2px 0 0; padding: 4px; display: flex; flex-direction: column; gap: 2px; border-radius: var(--radius-lg); background: var(--surface); }
+.ep-calendars a, .ep-calendars button {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto 16px; align-items: center; gap: 10px;
+  width: 100%; min-height: 48px; padding: 0 16px; border: 0; border-radius: var(--radius-md);
+  background: transparent; color: var(--text); font: inherit; text-align: left; text-decoration: none; cursor: pointer;
 }
-.ep-cal a:hover, .ep-cal button:hover { background: var(--surface); }
+.ep-calendars b { font-size: 15px; font-weight: 700; }
+.ep-calendars span { font-size: 13px; color: var(--text-subtle); white-space: nowrap; }
+.ep-calendars svg { color: var(--text-subtle); }
+.ep-calendars a:hover, .ep-calendars button:hover { background: var(--surface-high); }
 
 /* With a poster, a soft blurred copy of it fills the header behind the host colour. */
 .ep-hero.has-cover { position: relative; isolation: isolate; overflow: hidden; }
