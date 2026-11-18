@@ -207,17 +207,19 @@
 /* Every registered page: compact rows, avatar then name and what's next. */
 .lp-totals { margin: 8px 0 0; color: var(--text-muted); font-size: 15px; }
 .lp-totals b { color: var(--text); }
-.lp-pages { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 4px 8px; }
+.lp-pages { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
 .lp-page {
-  display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 8px 10px;
-  border-radius: var(--radius-md); color: var(--text); text-decoration: none; transition: background-color var(--dur-fast) ease;
+  display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 16px;
+  border-radius: var(--radius-lg); background: var(--surface); color: var(--text); text-decoration: none;
+  transition: background-color var(--dur-fast) ease, transform var(--dur-fast) ease;
 }
-.lp-page:hover { background: var(--surface); }
-.lp-page-text { display: flex; flex-direction: column; min-width: 0; }
+.lp-page:hover { background: var(--surface-high); transform: translateY(-2px); }
+.lp-page-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .lp-page-text > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.lp-page-text b { font-size: 14px; }
-.lp-page-text span { font-size: 12px; color: var(--text-subtle); }
-.lp-page-count { padding: 2px 8px; border-radius: var(--radius-pill); background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 800; white-space: nowrap; }
+.lp-page-text b { font-size: 18px; font-weight: 800; letter-spacing: -0.01em; }
+.lp-page-text span { font-size: 14px; color: var(--text-muted); }
+.lp-page-count { padding: 4px 10px; border-radius: var(--radius-pill); background: var(--accent); color: var(--on-accent); font-size: 12px; font-weight: 800; white-space: nowrap; }
+@media (max-width: 400px) { .lp-page { grid-template-columns: 52px minmax(0, 1fr); } .lp-page-count { grid-column: 2; justify-self: start; } }
 
 /* Final call */
 .lp-final { padding: 120px var(--gutter); border-top: 1px solid var(--border); display: flex; flex-direction: column; align-items: flex-start; gap: 28px; }

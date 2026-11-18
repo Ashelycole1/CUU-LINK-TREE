@@ -199,7 +199,7 @@ export function Landing() {
             {pages.map((p) => (
               <li key={p.username}>
                 <Link to={`/${p.username}`} className="lp-page">
-                  <CoverArt src={p.avatarUrl || null} name={p.displayName} icon="users" size={40} round />
+                  <CoverArt src={p.avatarUrl || null} name={p.displayName} icon="users" size={64} round />
                   <span className="lp-page-text">
                     <b>{p.displayName}</b>
                     <span>
