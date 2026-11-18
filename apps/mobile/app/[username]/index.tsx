@@ -231,6 +231,22 @@ export default function HostScreen() {
             </Pressable>
           ))}
 
+          {/* Keep exploring: what's on across every page. */}
+          <Pressable
+            onPress={() => router.push("/explore")}
+            accessibilityRole="link"
+            style={({ pressed }) => [s.more, { backgroundColor: pressed ? p.surfaceHigh : p.surface }]}
+          >
+            <View style={[s.moreIcon, { backgroundColor: p.accent }]}>
+              <Icon name="search" size={20} color={p.onAccent} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: p.text, fontSize: 15, fontWeight: "800" }}>Find more events</Text>
+              <Text style={{ color: p.textSubtle, fontSize: 13 }}>See what's on across Event Tree</Text>
+            </View>
+            <Icon name="chevronRight" size={18} color={p.textSubtle} />
+          </Pressable>
+
           <Pressable onPress={() => router.push("/")} style={s.footer} accessibilityRole="link">
             <Text style={{ color: p.textSubtle, fontSize: 13, fontWeight: "700" }}>Made with Event Tree</Text>
           </Pressable>
@@ -263,5 +279,7 @@ const s = StyleSheet.create({
   track: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8, paddingHorizontal: 6, marginHorizontal: -6, borderRadius: corner.md },
   date: { width: 38, alignItems: "center" },
   rating: { flexDirection: "row", alignItems: "center", gap: 4 },
-  footer: { alignSelf: "center", paddingVertical: 12, marginTop: gap.xl },
+  footer: { alignSelf: "center", paddingVertical: 12 },
+  more: { flexDirection: "row", alignItems: "center", gap: 14, padding: 12, borderRadius: corner.lg, marginTop: gap.xl },
+  moreIcon: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
 });

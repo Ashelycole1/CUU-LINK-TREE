@@ -1,10 +1,10 @@
-import { useMemo, useState, type CSSProperties } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import type { CommunityEventDTO } from "@event-tree/api-client";
 import { SiteNav } from "../../components/brand/SiteNav";
-import { Chip, CoverArt, Icon, categoryIcon } from "../../components/ui";
+import { CommunityCard } from "../../components/community/CommunityCard";
+import { Chip, Icon, categoryIcon } from "../../components/ui";
 import { api } from "../../lib/api";
-import { dayNumber, headerTint, monthShort, startsIn, weekdayShort } from "../../lib/dates";
 import { useResource } from "../../lib/useResource";
 
 const WEEK = 7 * 86_400_000;
@@ -117,31 +117,9 @@ export function CommunityPage() {
               {g.title} <span>{g.items.length}</span>
             </h2>
             <ul className="cm-grid" role="list">
-              {g.items.map(({ event: e, host }) => (
-                <li key={e.id}>
-                  <Link className="cm-card" to={`/${host.username}/${e.slug}`} style={{ "--host-tint": headerTint(host.color) } as CSSProperties}>
-                    <div className="cm-art">
-                      <CoverArt src={e.coverImage?.url} name={e.title} category={e.category} radius="inherit" />
-                      <span className="cm-date" aria-hidden="true">
-                        <span>{monthShort(e.startsAt)}</span>
-                        <b>{dayNumber(e.startsAt)}</b>
-                      </span>
-                      <span className="cm-cat">{e.category}</span>
-                    </div>
-                    <div className="cm-text">
-                      <b className="cm-title">{e.title}</b>
-                      <span className={`cm-when${e.status === "live" ? " is-live" : ""}`}>
-                        {e.status === "live"
-                          ? "Happening now"
-                          : `${weekdayShort(e.startsAt)} ${new Date(e.startsAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} · ${startsIn(e.startsAt, e.endsAt).replace("Starts ", "")}`}
-                      </span>
-                      {e.venue && <span className="cm-venue">{e.venue}</span>}
-                      <span className="cm-host">
-                        <CoverArt src={host.avatarUrl || null} name={host.displayName} icon="users" size={20} round />
-                        {host.displayName}
-                      </span>
-                    </div>
-                  </Link>
+              {g.items.map((item) => (
+                <li key={item.event.id}>
+                  <CommunityCard item={item} />
                 </li>
               ))}
             </ul>

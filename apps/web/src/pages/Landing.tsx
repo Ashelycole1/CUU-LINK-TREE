@@ -1,22 +1,13 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { ClaimForm } from "../components/brand/ClaimForm";
 import { Logo } from "../components/brand/Logo";
 import { SiteNav } from "../components/brand/SiteNav";
 import { HostPage } from "../components/host/HostPage";
-import { samplePage } from "../content/samplePage";
+import { CommunityCard } from "../components/community/CommunityCard";
+import { useShowcase } from "../lib/useShowcase";
 import { CoverArt, Icon, Stars } from "../components/ui";
 import { PUBLIC_HOST } from "../lib/config";
-
-/** Seeded local accounts (npm run seed). Production starts empty, so these only show in development. */
-const DEMOS = !import.meta.env.DEV
-  ? []
-  : [
-      { username: "buildersmeetup", name: "Builders Meetup", what: "Talks, hack weekends, career nights", category: "Tech" },
-      { username: "nightandsong", name: "Night & Song", what: "Live music and late-night culture", category: "Music" },
-      { username: "sunrisesports", name: "Sunrise Sports Club", what: "Fun runs and finals days", category: "Sports" },
-    ];
 
 /** Photo tiles for the "afterwards" stage: flat colour stand-ins for guest photos. */
 const PHOTO_TONES = ["#5b3a8c", "#2f5d50", "#8c4a2f", "#2f4a8c"];
@@ -31,7 +22,9 @@ const STATS = [
 /** The marketing home page: claim a name, see a real page, follow one event from announcement to reviews. */
 export function Landing() {
   const { user } = useAuth();
-  const [sample] = useState(samplePage);
+  const { tree: sample, real, events } = useShowcase();
+  const hosts = [...new Map(events.map((x) => [x.host.username, x])).values()].slice(0, 6);
+  const live = events.filter((x) => x.event.status === "live").length;
   const maxViews = Math.max(...STATS.map((s) => s.views));
 
   return (
@@ -41,7 +34,7 @@ export function Landing() {
       </a>
       <SiteNav>
         <a href="#how">How it works</a>
-        {DEMOS.length > 0 && <a href="#examples">Examples</a>}
+        {hosts.length > 0 && <a href="#examples">Pages</a>}
       </SiteNav>
 
       <header className="lp-hero" id="main" tabIndex={-1}>
@@ -60,7 +53,7 @@ export function Landing() {
           <p className="lp-note">Free, and ready in about a minute.</p>
         </div>
 
-        <figure className="lp-window" aria-label="An example Event Tree page">
+        <figure className="lp-window" aria-label={real ? `${sample.profile.displayName} on Event Tree` : "An example Event Tree page"}>
           <div className="lp-window-bar" aria-hidden="true">
             <span className="lp-window-dots">
               <i />
@@ -74,8 +67,37 @@ export function Landing() {
           <div className="lp-window-page">
             <HostPage tree={sample} preview />
           </div>
+          {real && (
+            <figcaption className="lp-window-cap">
+              <Link to={`/${sample.profile.username}`}>Open {sample.profile.displayName}'s page</Link>
+            </figcaption>
+          )}
         </figure>
       </header>
+
+      {events.length > 0 && (
+        <section className="lp-section lp-now" aria-labelledby="now-title">
+          <div className="lp-now-head">
+            <div>
+              <h2 id="now-title">
+                {live > 0 && <span className="live-pip" aria-hidden="true" />}
+                {live > 0 ? `${live} on right now, more coming up` : "Coming up on Event Tree"}
+              </h2>
+              <p>Real events from pages on Event Tree.</p>
+            </div>
+            <Link className="btn btn-ghost" to="/explore">
+              See all in Community
+            </Link>
+          </div>
+          <ul className="lp-now-row" role="list">
+            {events.slice(0, 8).map((item) => (
+              <li key={item.event.id}>
+                <CommunityCard item={item} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section id="how" className="lp-section lp-life" aria-labelledby="life-title">
         <div className="lp-section-head">
@@ -194,17 +216,17 @@ export function Landing() {
         </div>
       </section>
 
-      {DEMOS.length > 0 && (
+      {hosts.length > 0 && (
         <section id="examples" className="lp-section" aria-labelledby="examples-title">
           <div className="lp-section-head">
             <h2 id="examples-title">Pages already running</h2>
           </div>
           <div className="lp-shelf">
-            {DEMOS.map((d) => (
-              <Link key={d.username} to={`/${d.username}`} className="lp-shelf-item">
-                <CoverArt name={d.name} category={d.category} />
-                <b>{d.name}</b>
-                <span>{d.what}</span>
+            {hosts.map(({ host, event }) => (
+              <Link key={host.username} to={`/${host.username}`} className="lp-shelf-item">
+                <CoverArt src={host.avatarUrl || null} name={host.displayName} category={event.category} />
+                <b>{host.displayName}</b>
+                <span>Next: {event.title}</span>
               </Link>
             ))}
           </div>

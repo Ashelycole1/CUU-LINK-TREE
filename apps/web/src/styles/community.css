@@ -85,3 +85,11 @@
 @media (max-width: 400px) {
   .site-nav .logo span { display: none; }
 }
+
+.cm-live {
+  position: absolute; right: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+  border-radius: var(--radius-pill); background: var(--accent); color: var(--on-accent); font-size: 12px; font-weight: 800;
+}
+.cm-live::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: cm-pulse 1.6s ease-in-out infinite; }
+@keyframes cm-pulse { 50% { opacity: 0.3; } }
+@media (prefers-reduced-motion: reduce) { .cm-live::before { animation: none; } }

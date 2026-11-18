@@ -4,7 +4,7 @@ import type { EventDTO, TreeDTO } from "@event-tree/api-client";
 import { pageUrl } from "../../lib/api";
 import { dayNumber, headerTint, monthShort, startsIn, whenLine } from "../../lib/dates";
 import { FONT_STACKS } from "../../theme/appearance";
-import { CircleAction, CoverArt, IconButton, Stars, ThemeToggle, useToast } from "../ui";
+import { CircleAction, CoverArt, Icon, IconButton, Stars, ThemeToggle, useToast } from "../ui";
 import { SocialIcon } from "../tree/SocialIcon";
 
 interface Props {
@@ -90,6 +90,11 @@ export function HostPage({ tree, onOpen, preview = false }: Props) {
                 <SocialIcon platform={s.platform} />
               </a>
             ))}
+            {!preview && (
+              <Link className="icon-btn" to="/explore" aria-label="More events in Community" title="More events in Community">
+                <Icon name="search" size={20} />
+              </Link>
+            )}
             <IconButton icon="share" label="Share this page" onClick={share} />
             {!preview && <ThemeToggle />}
           </div>
@@ -148,7 +153,17 @@ export function HostPage({ tree, onOpen, preview = false }: Props) {
 
         {!preview && (
           <footer className="host-foot">
-            <Link to="/">Make a page like this on Event Tree</Link>
+            <Link to="/explore" className="host-more">
+              <span className="host-more-icon" aria-hidden="true">
+                <Icon name="search" size={20} />
+              </span>
+              <span className="host-more-text">
+                <b>Find more events</b>
+                <span>See what's on across Event Tree in Community</span>
+              </span>
+              <Icon name="right" size={18} />
+            </Link>
+            <Link to="/" className="host-made">Make a page like this on Event Tree</Link>
           </footer>
         )}
       </div>

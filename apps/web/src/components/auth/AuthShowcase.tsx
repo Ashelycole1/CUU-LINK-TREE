@@ -1,6 +1,5 @@
-import { useState } from "react";
-import { samplePage } from "../../content/samplePage";
 import { PUBLIC_HOST } from "../../lib/config";
+import { useShowcase } from "../../lib/useShowcase";
 import { HostPage } from "../host/HostPage";
 import { ThemeToggle } from "../ui";
 
@@ -9,9 +8,9 @@ import { ThemeToggle } from "../ui";
  * see what they're making while they fill in the form. Hidden on phones.
  */
 export function AuthShowcase({ caption }: { caption: string }) {
-  const [sample] = useState(samplePage);
+  const { tree: sample, real } = useShowcase();
   return (
-    <aside className="auth-side" aria-label="An example Event Tree page">
+    <aside className="auth-side" aria-label={real ? `${sample.profile.displayName} on Event Tree` : "An example Event Tree page"}>
       <div className="auth-side-toggle">
         <ThemeToggle />
       </div>
