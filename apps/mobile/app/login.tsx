@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import { ApiError, EMAIL_NOT_VERIFIED, type MeDTO } from "@event-tree/api-client";
 import { useAuth } from "../src/auth/AuthContext";
 import { ErrorText, Field, PrimaryButton } from "../src/components/Field";
-import { brand } from "../src/theme";
+import { brand, radius, shadow, space, type } from "../src/theme";
 
 /**
  * Log in, or create an account (Neon Auth). New accounts first enter the
@@ -145,10 +145,10 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 16 },
-  card: { backgroundColor: "#fff", borderRadius: 24, padding: 20, gap: 14, borderWidth: 2, borderColor: brand.plum },
-  title: { fontSize: 28, fontWeight: "800", color: brand.plum },
-  body: { fontSize: 16, color: brand.plum },
-  note: { color: brand.plum, fontWeight: "600" },
-  switch: { color: brand.plum, fontWeight: "700", textAlign: "center", textDecorationLine: "underline", paddingVertical: 6 },
+  content: { padding: space.lg, paddingTop: space.xl },
+  card: { backgroundColor: brand.white, borderRadius: radius.card, padding: space.xl, gap: space.lg, borderWidth: 1, borderColor: "rgba(42,15,61,0.06)", ...shadow.float },
+  title: { ...type.title, fontSize: 28, lineHeight: 34, color: brand.plum },
+  body: { ...type.body, color: brand.ink2 },
+  note: { color: brand.ok, fontWeight: "600", fontSize: 15 },
+  switch: { color: brand.blue, fontWeight: "700", fontSize: 15, textAlign: "center", paddingVertical: 10 },
 });

@@ -57,13 +57,15 @@ export function VerifyEmailForm({
           inputMode="numeric"
           autoComplete="one-time-code"
           maxLength={8}
+          className="code-input"
           required
           autoFocus
         />
       </label>
       {error && <p className="form-error" role="alert">{error}</p>}
       {note && <p className="field-status ok" aria-live="polite">{note}</p>}
-      <button className="btn btn-dark btn-block" disabled={busy || code.trim().length < 4}>
+      <button className="btn btn-dark btn-block" disabled={busy || code.trim().length < 4} aria-busy={busy}>
+        {busy && <span className="spinner" aria-hidden="true" />}
         {busy ? "Checking…" : "Verify"}
       </button>
       <p className="auth-switch">

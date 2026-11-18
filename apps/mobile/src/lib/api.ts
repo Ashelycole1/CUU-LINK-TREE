@@ -1,5 +1,6 @@
 import * as SecureStore from "expo-secure-store";
-import { EventTreeClient, NeonAuthSession, type SessionStore } from "@event-tree/api-client";
+import { fetch as expoFetch } from "expo/fetch";
+import { EventTreeClient, NeonAuthSession, type FetchLike, type SessionStore } from "@event-tree/api-client";
 
 /**
  * The deployed Event Tree address, e.g. https://eventtree.onrender.com.
@@ -22,8 +23,18 @@ const keychain: SessionStore = {
 /** Sign-up, sign-in and sign-out with Neon Auth, through the server's /api/auth proxy. */
 export const auth = new NeonAuthSession({ baseUrl: BASE_URL, store: keychain });
 
+/**
+ * Image uploads send raw bytes. React Native's built-in fetch drops or mangles
+ * binary bodies on iOS, so those requests go through Expo's native fetch,
+ * which sends Uint8Array bodies as they are. Everything else is unchanged.
+ */
+const appFetch: FetchLike = (input, init) =>
+  init?.body instanceof Uint8Array
+    ? (expoFetch(input, init as Parameters<typeof expoFetch>[1]) as unknown as Promise<Response>)
+    : globalThis.fetch(input, init);
+
 /** Every API request carries a fresh Neon Auth JWT when someone is signed in. */
-export const api = new EventTreeClient({ baseUrl: BASE_URL, getToken: () => auth.token() });
+export const api = new EventTreeClient({ baseUrl: BASE_URL, fetch: appFetch, getToken: () => auth.token() });
 
 /** A public web link, e.g. webUrl("jazzfest", "opening-night") → https://…/jazzfest/opening-night. */
 export function webUrl(...parts: string[]): string {

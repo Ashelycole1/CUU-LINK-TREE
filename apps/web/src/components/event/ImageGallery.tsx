@@ -2,6 +2,9 @@ import { useRef, useState, type FormEvent } from "react";
 import { ApiError, type EventDTO, type ImageLinkDTO } from "@event-tree/api-client";
 import { api } from "../../lib/api";
 import { IMAGE_ACCEPT, IMAGE_SIZES, compressImage, imageProblem } from "../../lib/upload";
+import { useDialog } from "../../lib/useDialog";
+import { InlineError } from "../ui/Input";
+import { Icon } from "../ui/Icon";
 
 interface Props {
   event: EventDTO;
@@ -59,20 +62,36 @@ export function ImageGallery({ event, onUpdated }: Props) {
       <form className="inline-form" onSubmit={add}>
         <input ref={picker} type="file" accept={IMAGE_ACCEPT} onChange={(e) => pick(e.target.files?.[0])} aria-label="Choose a photo" />
         <input placeholder="Caption (optional)" value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={200} aria-label="Caption" />
-        <button className="primary" disabled={busy}>
+        <button className="primary" disabled={busy} aria-busy={busy}>
+          {busy && <span className="spinner" aria-hidden="true" />}
           {busy ? "Uploading…" : "Add photo"}
         </button>
       </form>
-      {error && <p className="error" role="alert">{error}</p>}
+      {error && <InlineError>{error}</InlineError>}
 
-      {open && (
-        <div className="lightbox" role="dialog" aria-modal="true" onClick={() => setOpen(null)}>
-          <figure>
-            <img src={open.url} alt={open.alt} />
-            {open.caption && <figcaption>{open.caption}</figcaption>}
-          </figure>
-        </div>
-      )}
+      {open && <Lightbox image={open} onClose={() => setOpen(null)} />}
     </section>
+  );
+}
+
+/** A full-screen photo. Closes with the button, Escape, or a click on the dark area. */
+function Lightbox({ image, onClose }: { image: ImageLinkDTO; onClose: () => void }) {
+  const closeBtn = useDialog<HTMLButtonElement>(true, onClose);
+  return (
+    <div
+      className="lightbox"
+      role="dialog"
+      aria-modal="true"
+      aria-label={image.caption || image.alt || "Photo"}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <button ref={closeBtn} type="button" className="lightbox-close" onClick={onClose} aria-label="Close photo">
+        <Icon name="close" size={22} />
+      </button>
+      <figure>
+        <img src={image.url} alt={image.alt} />
+        {image.caption && <figcaption>{image.caption}</figcaption>}
+      </figure>
+    </div>
   );
 }

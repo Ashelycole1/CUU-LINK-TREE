@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import type { EventDTO } from "@event-tree/api-client";
-import { TreeView } from "../../components/tree/TreeView";
+import { HostPage } from "../../components/host/HostPage";
 import { api } from "../../lib/api";
 import { useResource } from "../../lib/useResource";
+import { PageSkeleton } from "../../components/ui/PageSkeleton";
 import { NotFoundPage } from "../NotFoundPage";
 
 /**
@@ -28,6 +29,6 @@ export function PublicPage() {
   };
 
   if (tree.error?.isNotFound) return <NotFoundPage message={`There's no Event Tree at /${username} yet.`} />;
-  if (!tree.data) return <p className="loading-note">{tree.error ? tree.error.message : "Loading…"}</p>;
-  return <TreeView tree={tree.data} onOpen={onOpen} />;
+  if (!tree.data) return tree.error ? <p className="loading-note" role="alert">{tree.error.message}</p> : <PageSkeleton variant="tree" />;
+  return <HostPage tree={tree.data} onOpen={onOpen} />;
 }

@@ -1,3 +1,4 @@
+import { PUBLIC_HOST } from "./config";
 import { createAuthClient } from "@neon/auth";
 import { EventTreeClient } from "@event-tree/api-client";
 
@@ -31,8 +32,10 @@ try {
   // storage blocked: nothing to clean up
 }
 
-/** The public address of a page on the current origin, e.g. "event-tree.onrender.com/jazzfest". */
+/**
+ * A host's page: href opens it on the current origin; label is the public
+ * address from config (e.g. "eventlink.ashelycole.dev/jazzfest"), never localhost.
+ */
 export function pageUrl(username: string): { href: string; label: string } {
-  const href = `${window.location.origin}/${username}`;
-  return { href, label: href.replace(/^https?:\/\//, "") };
+  return { href: `${window.location.origin}/${username}`, label: `${PUBLIC_HOST}/${username}` };
 }

@@ -1,8 +1,10 @@
 import * as ImagePicker from "expo-image-picker";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
+import { File } from "expo-file-system";
 
 export interface PickedImage {
-  body: Blob;
+  /** The file's bytes. React Native's own fetch can't reliably send a Blob, so uploads go out as raw bytes. */
+  body: Uint8Array;
   type: string;
   uri: string;
 }
@@ -50,7 +52,7 @@ export async function pickImage(options: { square?: boolean; maxSide?: number } 
 }
 
 async function read(uri: string, type: string): Promise<PickedImage> {
-  const body = await (await fetch(uri)).blob();
-  if (body.size > MAX_BYTES) throw new Error("That image is over 5 MB. Choose a smaller one.");
+  const body = await new File(uri).bytes();
+  if (body.byteLength > MAX_BYTES) throw new Error("That image is over 5 MB. Choose a smaller one.");
   return { body, type, uri };
 }

@@ -5,7 +5,7 @@ import { ApiError } from "@event-tree/api-client";
 import { useAuth } from "../src/auth/AuthContext";
 import { ErrorText, Field, PrimaryButton } from "../src/components/Field";
 import { WEB_HOST, api } from "../src/lib/api";
-import { brand } from "../src/theme";
+import { brand, radius, shadow, space, type } from "../src/theme";
 
 type Availability = { state: "idle" | "checking" | "ok" | "bad"; message?: string };
 
@@ -81,11 +81,11 @@ export default function ClaimScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 16 },
-  card: { backgroundColor: "#fff", borderRadius: 24, padding: 20, gap: 14, borderWidth: 2, borderColor: brand.plum },
-  title: { fontSize: 28, fontWeight: "800", color: brand.plum },
-  body: { color: brand.ink2, fontSize: 15 },
-  status: { color: "#1b7a3d", fontWeight: "600" },
-  bad: { color: "#c62828" },
-  hint: { color: brand.ink2, fontSize: 13, textAlign: "center" },
+  content: { padding: space.lg, paddingTop: space.xl },
+  card: { backgroundColor: brand.white, borderRadius: radius.card, padding: space.xl, gap: space.lg, borderWidth: 1, borderColor: "rgba(42,15,61,0.06)", ...shadow.float },
+  title: { ...type.title, fontSize: 28, lineHeight: 34, color: brand.plum },
+  body: { ...type.body, color: brand.ink2 },
+  status: { color: brand.ok, fontWeight: "600", fontSize: 15 },
+  bad: { color: brand.danger },
+  hint: { ...type.small, color: brand.ink2, textAlign: "center" },
 });

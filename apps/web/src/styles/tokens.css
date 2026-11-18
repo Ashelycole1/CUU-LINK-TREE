@@ -1,34 +1,122 @@
-/* Event Tree brand tokens. The public page uses its own --t-* variables
-   (set per host from their appearance); everything else uses these. */
+/* Event Tree design tokens: dark (default) and light, yellow as the only accent.
+   The mobile app mirrors these values in apps/mobile/src/theme.ts.
+   A host's public page still uses its own --t-* variables (set from their appearance). */
 :root {
-  --plum: #2a0f3d;
-  --plum-2: #3d1a55;
-  --blue: #3a5cff;
-  --blue-deep: #2440d6;
-  --pink: #ff3d7f;
-  --sun: #ffc928;
-  --paper: #fffaf2;
-  --paper-2: #f6eee1;
-  --white: #ffffff;
+  color-scheme: dark;
 
-  --ink: var(--plum);
-  --ink-2: #5d4a6c;
-  --ink-3: #8a7a96;
-  --line: #e6dccd;
-  --line-strong: #cfc2b0;
-  --danger: #c4243f;
-  --ok: #19794a;
+  --bg: #121212;
+  --bg-elevated: #181818;   /* cards, sidebar panels */
+  --surface: #242424;       /* inputs, chips, hover */
+  --surface-high: #2e2e2e;  /* pressed / selected */
+  --border: #2a2a2a;
+  --border-strong: #3d3d3d;
+  --text: #ffffff;
+  --text-muted: #b3b3b3;    /* 9.9:1 on --bg */
+  --text-subtle: #8a8a8a;   /* 5.4:1 on --bg, AA for small text */
+  --accent: #ffc72c;        /* ONLY primary actions, active states, the live dot */
+  --accent-hover: #ffd35c;
+  --on-accent: #121212;
+  --success: #3ddc84;
+  --danger: #f15e6c;
 
-  /* Chart series, checked with the dataviz validator against the paper surface. */
-  --c-views: #3a5cff;
-  --c-clicks: #e8306f;
+  /* Theme-aware roles (redefined for light below). */
+  --accent-ink: var(--accent);          /* yellow used AS text or a thin line: needs a darker shade on light */
+  --canvas: #000000;                    /* behind the dashboard panels */
+  --wash: rgba(255, 255, 255, 0.04);    /* quiet panel on a tinted background */
+  --wash-strong: rgba(255, 255, 255, 0.08);
+  --on-tint: rgba(255, 255, 255, 0.8);  /* secondary text on a host-tinted header */
+  --tint-base: #121212;                 /* host colours are mixed toward this... */
+  --tint-amount: 72%;                   /* ...keeping this much of the host colour */
+  --art-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --chrome: #1c1c1c;                    /* browser-window bar on the landing page */
 
-  --display: "Bricolage Grotesque", "Figtree", system-ui, sans-serif;
-  --body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
 
-  --r-sm: 10px;
-  --r-md: 16px;
-  --r-lg: 24px;
-  --r-pill: 999px;
-  --focus: 0 0 0 3px var(--paper), 0 0 0 5px var(--blue);
+  --font: "Figtree Variable", "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Motion: 150–200ms ease-out, nothing bouncy. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 150ms;
+  --dur: 200ms;
+  --dur-slow: 200ms;
+
+  --focus-ring: 0 0 0 2px var(--text);
+  --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.5);   /* menus, dialogs, artwork */
+
+  /* ---- Legacy names, mapped onto the dark tokens so older rules render
+     correctly until each page is rebuilt in its own phase. ---- */
+  --plum: var(--text);
+  --plum-2: var(--text-muted);
+  --blue: var(--accent);
+  --blue-deep: var(--accent-hover);
+  --pink: var(--accent);
+  --sun: var(--accent);
+  --paper: var(--bg);
+  --paper-2: var(--surface);
+  --white: var(--bg-elevated);
+  --ink: var(--text);
+  --ink-2: var(--text-muted);
+  --ink-3: var(--text-subtle);
+  --line: var(--border);
+  --line-strong: var(--border-strong);
+  --ok: var(--success);
+  --c-views: var(--accent);
+  --c-clicks: #8ab4ff;
+
+  --display: var(--font);
+  --body: var(--font);
+
+  --r-sm: var(--radius-md);
+  --r-md: var(--radius-lg);
+  --r-lg: var(--radius-lg);
+  --r-xl: var(--radius-lg);
+  --r-pill: var(--radius-pill);
+  --focus: var(--focus-ring);
+
+  --shadow-card: none;
+  --shadow-lift: none;
+  --shadow-float: var(--shadow-pop);
+  --shadow-hard: var(--shadow-pop);
+  --shadow-hard-sm: var(--shadow-pop);
+  --shadow-soft: 0 1px 0 var(--border);
+  --glow-pink: none;
 }
+
+/* ---------- light theme ----------
+   Neutral paper white (not cream), near-black ink, the same yellow for
+   buttons and a deep mustard wherever yellow has to be read as text. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #fbfbfa;
+  --bg-elevated: #ffffff;
+  --surface: #f0f0ee;
+  --surface-high: #e5e5e2;
+  --border: #e6e6e3;
+  --border-strong: #cbcbc7;
+  --text: #121212;
+  --text-muted: #4f4f4c;    /* 8.1:1 on --bg */
+  --text-subtle: #6b6b67;   /* 5.3:1 on --bg */
+  --accent: #ffc72c;
+  --accent-hover: #ffb800;
+  --on-accent: #121212;
+  --accent-ink: #8a6100;    /* 5.6:1 on --bg */
+  --success: #1b8a4f;
+  --danger: #c4243f;
+  --canvas: #ececea;
+  --wash: rgba(0, 0, 0, 0.025);
+  --wash-strong: rgba(0, 0, 0, 0.05);
+  --on-tint: rgba(18, 18, 18, 0.72);
+  --tint-base: #ffffff;
+  --tint-amount: 26%;
+  --art-shadow: 0 12px 32px rgba(18, 18, 18, 0.18);
+  --chrome: #f0f0ee;
+  --c-views: #a77800;      /* chart lines need 3:1 on white */
+  --c-clicks: #2f62c8;
+  --shadow-pop: 0 8px 28px rgba(18, 18, 18, 0.14), 0 0 0 1px rgba(18, 18, 18, 0.06);
+}
+
+:root[data-theme="light"] { --skel-a: #ececea; --skel-b: #f6f6f4; }

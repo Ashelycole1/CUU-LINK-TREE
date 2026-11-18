@@ -67,13 +67,13 @@ export function samplePage(): TreeDTO {
       },
     },
     upcoming: [
-      sampleEvent(1, "Rooftop Sessions", "🎷", "The Terrace", 4),
-      sampleEvent(2, "Open Mic Night", "🎤", "Basement Bar", 11),
-      sampleEvent(3, "Summer Block Party", "🎉", "Market Square", 26),
+      sampleEvent(1, "Rooftop Sessions", "", "The Terrace", 4),
+      sampleEvent(2, "Open Mic Night", "", "Basement Bar", 11),
+      sampleEvent(3, "Summer Block Party", "", "Market Square", 26),
     ],
     past: [
-      sampleEvent(4, "Unplugged Vol. 3", "🎸", "The Hall", -9, { average: 4.8, count: 37 }),
-      sampleEvent(5, "Spring Showcase", "🎹", "Town Theatre", -40, { average: 4.6, count: 52 }),
+      sampleEvent(4, "Unplugged Vol. 3", "", "The Hall", -9, { average: 4.8, count: 37 }),
+      sampleEvent(5, "Spring Showcase", "", "Town Theatre", -40, { average: 4.6, count: 52 }),
     ],
     categories: ["Music"],
   };

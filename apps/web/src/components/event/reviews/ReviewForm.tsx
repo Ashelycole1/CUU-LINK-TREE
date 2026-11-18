@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { ApiError, type ReviewDTO } from "@event-tree/api-client";
 import { api } from "../../../lib/api";
+import { InlineError } from "../../ui/Input";
 import { StarInput } from "./StarInput";
 
 interface Props {
@@ -44,8 +45,9 @@ export function ReviewForm({ eventId, onAdded }: Props) {
         What did you think? <span className="muted">(optional)</span>
         <textarea value={comment} onChange={(e) => setComment(e.target.value)} maxLength={1000} rows={3} />
       </label>
-      {error && <p className="error" role="alert">{error}</p>}
-      <button className="primary" disabled={busy}>
+      {error && <InlineError>{error}</InlineError>}
+      <button className="primary" disabled={busy} aria-busy={busy}>
+        {busy && <span className="spinner" aria-hidden="true" />}
         {busy ? "Posting…" : "Post review"}
       </button>
     </form>
