@@ -29,6 +29,8 @@ export function HostPage({ tree, onOpen, preview = false }: Props) {
   const next = tree.upcoming[0];
   const colour = profile.appearance.colors.background;
   const url = pageUrl(profile.username);
+  // The header image fills the header background; the art shows the profile picture.
+  const cover = profile.heroImageUrl && profile.avatarUrl ? profile.heroImageUrl : "";
   const photo = profile.avatarUrl || profile.heroImageUrl;
 
   const open = (e: EventDTO) => {
@@ -50,10 +52,10 @@ export function HostPage({ tree, onOpen, preview = false }: Props) {
   return (
     <div
       className={`host${preview ? " host--preview" : ""}`}
-      style={{ "--host-tint": headerTint(colour), "--host-font": FONT_STACKS[profile.appearance.font] } as CSSProperties}
+      style={{ "--host-tint": headerTint(colour), "--host-font": FONT_STACKS[profile.appearance.font], "--host-cover": cover ? `url(${JSON.stringify(cover)})` : undefined } as CSSProperties}
       inert={preview}
     >
-      <header className="host-head">
+      <header className={`host-head${cover ? " has-cover" : ""}`}>
         <CoverArt src={photo} name={profile.displayName} icon="users" className="host-art" radius="var(--radius-sm)" />
         <div className="host-id">
           <p className="host-kind">Event page</p>

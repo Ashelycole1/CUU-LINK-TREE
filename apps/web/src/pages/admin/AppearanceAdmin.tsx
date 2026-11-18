@@ -96,6 +96,7 @@ export function AppearanceAdmin() {
   }
 
   const look = draft.appearance;
+  const cover = draft.heroImageUrl && draft.avatarUrl ? draft.heroImageUrl : "";
   const photo = draft.avatarUrl || draft.heroImageUrl;
   const presets = themes.data ?? [];
 
@@ -108,8 +109,8 @@ export function AppearanceAdmin() {
 
       {/* Live header: changes show here straight away, before saving. */}
       <div
-        className="ap-preview"
-        style={{ "--host-tint": headerTint(look.colors.background), "--host-font": FONT_STACKS[look.font] } as CSSProperties}
+        className={`ap-preview${cover ? " has-cover" : ""}`}
+        style={{ "--host-tint": headerTint(look.colors.background), "--host-font": FONT_STACKS[look.font], "--host-cover": cover ? `url(${JSON.stringify(cover)})` : undefined } as CSSProperties}
         aria-label="Preview of your page header"
       >
         <CoverArt src={photo} name={draft.displayName || "?"} icon="users" size={96} />
@@ -136,7 +137,7 @@ export function AppearanceAdmin() {
             <small className="hint">{draft.bio.length}/160</small>
           </label>
           <ImageField label="Profile image" maxSide={IMAGE_SIZES.avatar} value={draft.avatarUrl} onChange={(avatarUrl) => patch({ avatarUrl })} placeholder="Upload, or paste a link" />
-          <ImageField label="Header image" maxSide={IMAGE_SIZES.header} value={draft.heroImageUrl} onChange={(heroImageUrl) => patch({ heroImageUrl })} placeholder="Used when there's no profile image" />
+          <ImageField label="Header image" maxSide={IMAGE_SIZES.header} value={draft.heroImageUrl} onChange={(heroImageUrl) => patch({ heroImageUrl })} placeholder="Fills the background of your page header" />
         </div>
       </section>
 

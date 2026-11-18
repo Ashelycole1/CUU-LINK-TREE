@@ -80,6 +80,34 @@ export function Countdown({ event }: { event: EventDTO }) {
   );
 }
 
+const compact = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+
+/** Opens Google Calendar's "new event" screen with everything filled in. */
+export function googleCalendarUrl(event: EventDTO, pageUrl: string): string {
+  const q = new URLSearchParams({
+    action: "TEMPLATE",
+    text: event.title,
+    dates: `${compact(event.startsAt)}/${compact(event.endsAt)}`,
+    details: [event.description, pageUrl].filter(Boolean).join("\n\n"),
+    location: event.venue ?? "",
+  });
+  return `https://calendar.google.com/calendar/render?${q}`;
+}
+
+/** Opens Outlook's "new event" screen with everything filled in. */
+export function outlookCalendarUrl(event: EventDTO, pageUrl: string): string {
+  const q = new URLSearchParams({
+    path: "/calendar/action/compose",
+    rru: "addevent",
+    subject: event.title,
+    startdt: new Date(event.startsAt).toISOString(),
+    enddt: new Date(event.endsAt).toISOString(),
+    body: [event.description, pageUrl].filter(Boolean).join("\n\n"),
+    location: event.venue ?? "",
+  });
+  return `https://outlook.live.com/calendar/0/deeplink/compose?${q}`;
+}
+
 /** Builds an .ics file in the browser so visitors can save the event to any calendar app. */
 export function calendarFile(event: EventDTO, pageUrl: string): string {
   const stamp = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");

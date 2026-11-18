@@ -102,3 +102,10 @@
 /* Full-screen pages: keep the content to a readable width. */
 .host:not(.host--preview) .host-head, .host:not(.host--preview) .host-body { padding-inline: max(32px, calc((100cqi - 1120px) / 2)); }
 @container (max-width: 620px) { .host:not(.host--preview) .host-head, .host:not(.host--preview) .host-body { padding-inline: 20px; } }
+
+/* Header image: fills the header behind the host's colour, fading into the page so the name stays readable. */
+.host-head.has-cover, .ap-preview.has-cover {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--host-tint) 30%, transparent) 0%, color-mix(in srgb, var(--host-tint) 78%, transparent) 55%, var(--bg) 100%),
+    var(--host-cover) center / cover no-repeat;
+}

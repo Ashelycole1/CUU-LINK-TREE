@@ -1,8 +1,8 @@
-import { useEffect, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import type { EventDTO } from "@event-tree/api-client";
 import { ImageGallery } from "../../components/event/ImageGallery";
-import { Countdown, PhaseRail, calendarFile } from "../../components/event/EventFlow";
+import { Countdown, PhaseRail, calendarFile, googleCalendarUrl, outlookCalendarUrl } from "../../components/event/EventFlow";
 import { RatingBars } from "../../components/event/reviews/RatingBars";
 import { ReviewForm } from "../../components/event/reviews/ReviewForm";
 import { ReviewList } from "../../components/event/reviews/ReviewList";
@@ -36,6 +36,7 @@ export function PublicEventPage() {
   const page = useResource(() => api.getPage(username), [username]);
   const event = useResource(() => api.getPageEvent(username, slug), [username, slug]);
   const reviews = useResource(() => (event.data ? api.listReviews(event.data.id) : Promise.resolve([])), [event.data?.id]);
+  const [calOpen, setCalOpen] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -106,11 +107,24 @@ export function PublicEventPage() {
           </a>
         ))}
         {e.status === "upcoming" && (
-          <button type="button" className="ep-link" onClick={saveToCalendar}>
+          <button type="button" className="ep-link" aria-expanded={calOpen} aria-controls="ep-cal" onClick={() => setCalOpen((v) => !v)}>
             <Icon name="calendar" size={20} />
             <span>Add to calendar</span>
-            <Icon name="down" size={16} />
+            <Icon name={calOpen ? "up" : "down"} size={16} />
           </button>
+        )}
+        {e.status === "upcoming" && calOpen && (
+          <div className="ep-cal" id="ep-cal">
+            <a href={googleCalendarUrl(e, url)} target="_blank" rel="noreferrer">
+              Google Calendar
+            </a>
+            <a href={outlookCalendarUrl(e, url)} target="_blank" rel="noreferrer">
+              Outlook
+            </a>
+            <button type="button" onClick={saveToCalendar}>
+              Apple Calendar
+            </button>
+          </div>
         )}
       </div>
     </section>
@@ -212,7 +226,10 @@ export function PublicEventPage() {
         </div>
       </nav>
 
-      <header className="ep-hero">
+      <header
+        className={`ep-hero${e.coverImage ? " has-cover" : ""}`}
+        style={e.coverImage ? ({ "--ep-cover": `url(${JSON.stringify(e.coverImage.url)})` } as CSSProperties) : undefined}
+      >
         <div className="ep-poster">
           {e.coverImage ? (
             <img src={e.coverImage.url} alt={e.coverImage.alt} />

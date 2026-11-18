@@ -39,6 +39,8 @@ export default function HostScreen() {
   const list = tab === "upcoming" ? upcoming : past;
   const tint = headerTint(profile?.appearance.colors.background ?? "#5b4b8a", p);
   const onTint = p.scheme === "dark" ? "rgba(255,255,255,0.8)" : "rgba(18,18,18,0.72)";
+  // The header image fills the header; the art shows the profile picture.
+  const cover = profile?.heroImageUrl && profile.avatarUrl ? profile.heroImageUrl : "";
   const photo = profile?.avatarUrl || profile?.heroImageUrl;
   const name = profile?.displayName ?? username;
   const initials = name
@@ -69,6 +71,14 @@ export default function HostScreen() {
       >
         {/* Album header, tinted with the host's colour. */}
         <View style={[s.header, { backgroundColor: tint, paddingTop: insets.top + 8 }]}>
+          {!!cover && (
+            <>
+              <Image source={{ uri: cover }} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityIgnoresInvertColors />
+              {/* Fade the photo into the page so the name stays readable. */}
+              <View style={[StyleSheet.absoluteFill, { backgroundColor: tint, opacity: 0.45 }]} />
+              <View style={[s.fade, { backgroundColor: p.bg }]} />
+            </>
+          )}
           <View style={s.topBar}>
             {router.canGoBack() ? (
               <Pressable onPress={() => router.back()} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" style={[s.chrome, { backgroundColor: "rgba(0,0,0,0.25)" }]}>
@@ -233,7 +243,8 @@ export default function HostScreen() {
 const s = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: 24 },
   ghost: { marginTop: 8, paddingHorizontal: 20, paddingVertical: 12, borderRadius: corner.pill, borderWidth: 1.5 },
-  header: { paddingHorizontal: gap.lg, paddingBottom: gap.xl, gap: 6 },
+  header: { paddingHorizontal: gap.lg, paddingBottom: gap.xl, gap: 6, overflow: "hidden" },
+  fade: { position: "absolute", left: 0, right: 0, bottom: 0, height: "45%", opacity: 0.85 },
   topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: gap.lg },
   chrome: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   art: { width: 168, height: 168, borderRadius: corner.md, overflow: "hidden", alignItems: "center", justifyContent: "center", marginBottom: gap.lg, shadowColor: "#000", shadowOpacity: 0.4, shadowRadius: 20, shadowOffset: { width: 0, height: 10 }, elevation: 10 },
