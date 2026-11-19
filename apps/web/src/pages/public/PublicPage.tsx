@@ -6,6 +6,7 @@ import { api } from "../../lib/api";
 import { useResource } from "../../lib/useResource";
 import { PageSkeleton } from "../../components/ui/PageSkeleton";
 import { NotFoundPage } from "../NotFoundPage";
+import { posthog } from "../../lib/posthog";
 
 /**
  * A host's public page at /:username. Counts a page view on load, and a
@@ -25,7 +26,9 @@ export function PublicPage() {
   }, [preview, tree.data, username]);
 
   const onOpen = (event: EventDTO) => {
-    if (!preview) void api.recordClick(event.id).catch(() => undefined);
+    if (preview) return;
+    posthog.capture("event_opened", { event_status: event.status });
+    void api.recordClick(event.id).catch(() => undefined);
   };
 
   if (tree.error?.isNotFound) return <NotFoundPage message={`There's no Event Tree at /${username} yet.`} />;

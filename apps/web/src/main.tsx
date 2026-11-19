@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import { App } from "./App";
 import { AuthProvider } from "./auth/AuthContext";
 import { ToastProvider } from "./components/ui";
+import "./lib/posthog";
 import "@fontsource-variable/figtree";
 import "./styles/tokens.css";
 import "./styles/base.css";
