@@ -49,6 +49,12 @@ jobs:
       - name: Install packages
         run: flutter pub get --enforce-lockfile
 
+      # The models in lib/data/models are freezed/json_serializable
+      # sources; their .freezed.dart and .g.dart twins are generated
+      # rather than committed.
+      - name: Generate models
+        run: dart run build_runner build
+
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed lib test
 

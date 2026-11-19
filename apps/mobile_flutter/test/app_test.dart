@@ -1,12 +1,23 @@
 import 'package:event_tree/app.dart';
 import 'package:event_tree/features/discover/presentation/discover_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'support/fake_api.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   testWidgets('the app starts on Discover with four tabs', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: EventTreeApp()));
+    await tester.pumpWidget(
+      withFakeApi(
+        fakeApiDio({'/community': communityJson()}),
+        child: const EventTreeApp(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.byType(DiscoverScreen), findsOneWidget);
@@ -17,7 +28,12 @@ void main() {
   });
 
   testWidgets('the app uses the dark theme', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: EventTreeApp()));
+    await tester.pumpWidget(
+      withFakeApi(
+        fakeApiDio({'/community': communityJson()}),
+        child: const EventTreeApp(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     final context = tester.element(find.byType(DiscoverScreen));

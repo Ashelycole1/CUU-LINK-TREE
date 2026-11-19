@@ -15,6 +15,7 @@ import { Icon, LINK_ICONS } from "../../components/ui/Icon";
 import { PageSkeleton } from "../../components/ui/PageSkeleton";
 import { NotFoundPage } from "../NotFoundPage";
 import { posthog } from "../../lib/posthog";
+import { ANALYTICS_EVENTS } from "../../lib/analyticsEvents";
 
 const KIND: Record<EventDTO["status"], string> = { upcoming: "Upcoming event", live: "Happening now", past: "Past event" };
 
@@ -68,7 +69,7 @@ export function PublicEventPage() {
     a.href = href;
     a.download = `${e.slug}.ics`;
     a.click();
-    posthog.capture("calendar_exported", { event_status: e.status });
+    posthog.capture(ANALYTICS_EVENTS.calendarExported, { event_status: e.status });
     window.setTimeout(() => URL.revokeObjectURL(href), 1000);
   }
 
@@ -108,7 +109,7 @@ export function PublicEventPage() {
             href={l.url}
             target="_blank"
             rel="noreferrer"
-            onClick={() => posthog.capture("event_link_opened", { link_kind: l.kind, event_status: e.status })}
+            onClick={() => posthog.capture(ANALYTICS_EVENTS.eventLinkClicked, { link_kind: l.kind, event_status: e.status })}
           >
             <Icon name={LINK_ICONS[l.kind]} size={20} />
             <span>{l.label}</span>

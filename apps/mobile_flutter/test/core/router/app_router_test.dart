@@ -9,18 +9,38 @@ import 'package:event_tree/features/settings/presentation/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../support/fake_api.dart';
 
 Future<GoRouter> pumpAt(WidgetTester tester, String location) async {
   final router = buildAppRouter(initialLocation: location);
   addTearDown(router.dispose);
   await tester.pumpWidget(
-    MaterialApp.router(theme: AppTheme.dark(), routerConfig: router),
+    withFakeApi(
+      fakeApiDio({
+        '/community': communityJson(),
+        '/pages/gdg': treeJson(),
+        '/pages/gdg/views': <String, Object?>{},
+        '/pages/gdg/events/devfest-2026': eventJson(),
+        '/pages/cuucsa': treeJson(
+          profile: profileJson(username: 'cuucsa', displayName: 'CUUCSA'),
+        ),
+        '/pages/cuucsa/views': <String, Object?>{},
+      }),
+      child: MaterialApp.router(theme: AppTheme.dark(), routerConfig: router),
+    ),
   );
   await tester.pumpAndSettle();
   return router;
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  // Saved and the dashboard read the phone's own store.
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   group('web URLs open the matching screen', () {
     final cases = <String, Type>{
       '/explore': DiscoverScreen,

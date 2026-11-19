@@ -126,6 +126,9 @@ apps/mobile_flutter/
 │   ├── app.dart                   # MaterialApp.router + dark theme
 │   ├── core/
 │   │   ├── config/env.dart                    # API_BASE_URL, POSTHOG_KEY, POSTHOG_HOST via --dart-define
+│   │   ├── util/
+│   │   │   ├── format.dart                    # port of Format.ts: dates, times, countdown wording
+│   │   │   └── links.dart                     # opening a URL, and the web URL to share
 │   │   ├── network/
 │   │   │   ├── dio_provider.dart              # timeouts 15 s, base URL + /api/v1
 │   │   │   ├── auth_interceptor.dart          # adds Bearer JWT, one retry on 401 after a token refresh
@@ -147,7 +150,8 @@ apps/mobile_flutter/
 │   │   │   ├── app_theme.dart                 # Spotify-style dark ThemeData for app chrome
 │   │   │   └── page_theme.dart                # AppearanceDTO → widget styles for a host's page
 │   │   └── widgets/                           # shared, dumb widgets
-│   │       ├── event_tile.dart                # ticket/pill/outline/shadow variants
+│   │       ├── event_tile.dart                # ticket/pill/outline/shadow variants (a host's page)
+│   │       ├── event_row.dart                 # the same event on the app's own dark screens
 │   │       ├── status_badge.dart              # Live / This week / Past
 │   │       ├── countdown.dart
 │   │       ├── category_icon.dart             # category → icon (replaces EventDTO.emoji in the UI)
@@ -184,6 +188,10 @@ Rules:
 - `presentation/` never imports `dio`, repositories or `data/models` constructors directly. It goes through `application/` providers.
 - A feature never imports another feature. Shared things move to `core/` or `data/`.
 - One widget per file. Screens stay under about 250 lines. Split them into widgets.
+- A feature's own widgets live in `presentation/widgets/`; only widgets two features need move to `core/widgets/`.
+- `*.freezed.dart` and `*.g.dart` are generated, excluded from the analyzer and not committed.
+  Run `dart run build_runner build` after changing anything in `data/models/`
+  (`--delete-conflicting-outputs` was removed from build_runner and is no longer accepted).
 
 ## 4. Design system
 
@@ -227,9 +235,12 @@ no APNs and no push server. Do not add push packages or API changes for push. Ev
 - Use the free tier. Turn **session replay off** to start, and turn it on later with text masking if needed.
 - Call `identify(user.id)` after `me()` returns a user, and `reset()` on sign out. **Never send emails, names or review text** as properties.
 - Add an opt-out toggle in Settings (`optOut()` / `optIn()`).
-- Use the same event names on web and app (constants in `analytics_events.dart`, and a matching TS file in `apps/web`):
-  `page_viewed`, `event_opened`, `event_link_clicked`, `event_saved`, `reminder_scheduled`, `host_followed`,
-  `review_added`, `photo_uploaded`, `signed_up`, `username_claimed`, `event_created`, `event_updated`.
+- Use the same event names on web and app. The list lives in two files that must stay in step:
+  `apps/mobile_flutter/lib/core/analytics/analytics_events.dart` and `apps/web/src/lib/analyticsEvents.ts`.
+  The core: `page_viewed`, `event_opened`, `event_link_clicked`, `event_saved`, `reminder_scheduled`, `host_followed`,
+  `review_added`, `photo_uploaded`, `signed_up`, `username_claimed`, `event_created`, `event_updated`, plus `app_error`.
+  Both apps also send `signed_in`, `email_verified`, `calendar_exported`, `profile_updated`,
+  `event_visibility_changed` and `event_deleted`, which the web was already sending and the app now does too.
 - The existing in-house view/click analytics (`/pages/:u/views`, `/events/:id/clicks`, the host dashboard) **stay**.
   PostHog is for *our* product decisions. The in-house analytics are what *hosts* see.
 - Errors: wire `FlutterError.onError` and `PlatformDispatcher.instance.onError` in `bootstrap.dart` to `Analytics`
@@ -278,7 +289,7 @@ npx skills add https://github.com/evanca/flutter-ai-rules
 ```bash
 cd apps/mobile_flutter
 fvm flutter pub get
-fvm dart run build_runner build --delete-conflicting-outputs   # freezed/json models
+fvm dart run build_runner build   # freezed/json models
 fvm flutter run \
   --dart-define=API_BASE_URL=http://10.0.2.2:<port> \
   --dart-define=POSTHOG_KEY=phc_xxx \
@@ -293,7 +304,8 @@ fvm flutter run \
 
 1. **Skeleton.** FVM, pubspec, lints, folder tree, `bootstrap.dart` with error zones, dark theme tokens, router with placeholder screens.
    CI passes.
-2. **Read-only public data.** Models from `dto.ts`, `pages_repository`, Discover (`/community`), host page (`/pages/:u`, upcoming/past tabs),
+2. **Read-only public data.** Models from `dto.ts`, `pages_repository`, Discover (`/community`), host page (`/pages/:u`:
+   upcoming listed, past behind a toggle, as the web page has done since module 14 — not tabs),
    event detail, `recordView`/`recordClick`, deep links matching the web URLs. *This is already useful to students.*
 3. **Save and remind.** `saved_repository`, local reminders, follow a host, background sync, Saved tab, add to calendar, share.
 4. **Accounts.** The Neon Auth session port, sign-up, verify OTP, sign-in, claim username, sign-out. A test signs in against the local API.

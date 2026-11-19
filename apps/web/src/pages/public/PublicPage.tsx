@@ -7,6 +7,7 @@ import { useResource } from "../../lib/useResource";
 import { PageSkeleton } from "../../components/ui/PageSkeleton";
 import { NotFoundPage } from "../NotFoundPage";
 import { posthog } from "../../lib/posthog";
+import { ANALYTICS_EVENTS } from "../../lib/analyticsEvents";
 
 /**
  * A host's public page at /:username. Counts a page view on load, and a
@@ -27,7 +28,7 @@ export function PublicPage() {
 
   const onOpen = (event: EventDTO) => {
     if (preview) return;
-    posthog.capture("event_opened", { event_status: event.status });
+    posthog.capture(ANALYTICS_EVENTS.eventOpened, { event_status: event.status });
     void api.recordClick(event.id).catch(() => undefined);
   };
 

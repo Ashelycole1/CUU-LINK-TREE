@@ -4,6 +4,7 @@ import { api } from "../../../lib/api";
 import { InlineError } from "../../ui/Input";
 import { StarInput } from "./StarInput";
 import { posthog } from "../../../lib/posthog";
+import { ANALYTICS_EVENTS } from "../../../lib/analyticsEvents";
 
 interface Props {
   eventId: string;
@@ -24,7 +25,7 @@ export function ReviewForm({ eventId, onAdded }: Props) {
     setError("");
     try {
       onAdded(await api.addReview(eventId, { authorName, rating, comment }));
-      posthog.capture("review_submitted", { rating });
+      posthog.capture(ANALYTICS_EVENTS.reviewAdded, { rating });
       setAuthorName("");
       setRating(0);
       setComment("");

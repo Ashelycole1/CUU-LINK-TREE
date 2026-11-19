@@ -17,9 +17,12 @@ Setup commands are in §8 of `docs/flutter-mobile-plan.md`.
 
 ## Working rules for Claude Code
 
-1. Work **one phase (§10 of the plan) at a time**. Open a PR or commit per phase, and update `docs/PROGRESS.md`.
-2. **Before phase 2's screens**, show the user 3 designed screens (Discover, a host page, event detail) in the dark style
-   and wait for approval before building the rest.
+1. Work **one phase (§10 of the plan) at a time** where you can, and update `docs/PROGRESS.md` after each.
+   Phases 2 to 7 were built in one pass on 2026-11-19 because the toolchain on the owner's laptop took
+   most of a session to install; the progress row says what landed in each phase.
+2. **Before new screens**, show the user the design and wait for approval. Done for Discover, a host page and
+   event detail on 2026-11-19: rows-and-carousels Discover, and host pages edge-to-edge in the host's colours
+   with floating Back and Share.
 3. Never change `apps/api` or `apps/web` without saying so in the commit message. Any API change must keep the web app working
    (run the existing Vitest suites).
 4. If an endpoint or field in the plan doesn't match the code, the code wins. Fix the plan in the same commit.

@@ -3,6 +3,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { ApiError, EMAIL_NOT_VERIFIED, authErrorCode, friendlyAuthMessage, type ClaimPageInput, type MeDTO, type UserDTO } from "@event-tree/api-client";
 import { api, authClient } from "../lib/api";
 import { posthog } from "../lib/posthog";
+import { ANALYTICS_EVENTS, type AnalyticsEvent } from "../lib/analyticsEvents";
 
 interface AuthState {
   /** Signed in with Neon Auth. */
@@ -66,7 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async (): Promise<MeDTO | null> => {
     try {
       const next = await api.me();
-      posthog.identify(next.identity.id, { email: next.identity.email });
+      // The id only: plan §6 forbids sending an email or a name.
+      posthog.identify(next.identity.id);
       setMe(next);
       return next;
     } catch (error) {
@@ -85,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setChecking(false));
   }, [refresh]);
 
-  const afterSignIn = useCallback(async (event: "user_signed_in" | "account_created" | "email_verified") => {
+  const afterSignIn = useCallback(async (event: AnalyticsEvent) => {
     const next = await refresh();
     if (!next) throw new ApiError(401, "AUTH_ERROR", "Signed in, but the server didn't accept the session. Try again.");
     posthog.capture(event);
@@ -95,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(
     async (input: { email: string; password: string }) => {
       await neon(() => authClient.signIn.email(input), "Couldn't log in.");
-      return afterSignIn("user_signed_in");
+      return afterSignIn(ANALYTICS_EVENTS.signedIn);
     },
     [afterSignIn],
   );
@@ -105,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data } = await neon(() => authClient.signUp.email(input), "Couldn't create your account.");
       // No session yet: the account exists, but the emailed code must be entered first.
       if (!data?.token) throw new ApiError(403, EMAIL_NOT_VERIFIED, friendlyAuthMessage(EMAIL_NOT_VERIFIED, ""));
-      return afterSignIn("account_created");
+      return afterSignIn(ANALYTICS_EVENTS.signedUp);
     },
     [afterSignIn],
   );
@@ -113,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const verifyEmail = useCallback(
     async (input: { email: string; otp: string }) => {
       await neon(() => emailOtp().verifyEmail(input), "Couldn't check that code.");
-      return afterSignIn("email_verified");
+      return afterSignIn(ANALYTICS_EVENTS.emailVerified);
     },
     [afterSignIn],
   );
@@ -124,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const claim = useCallback(async (input: ClaimPageInput) => {
     const user = await api.claim(input);
-    posthog.capture("page_claimed");
+    posthog.capture(ANALYTICS_EVENTS.usernameClaimed);
     setMe((prev) => (prev ? { ...prev, user } : prev));
     return user;
   }, []);

@@ -66,5 +66,26 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- Deep links: eventtree:///gdg/devfest opens the same screen as the
+	     web URL (three slashes: the host part stays empty so the whole
+	     path reaches go_router). Universal Links (https://<host>/gdg/devfest) also need an
+	     Associated Domains entitlement and an apple-app-site-association
+	     file on the deployed host; add both once the domain is settled. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>app.eventtree.mobile</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>eventtree</string>
+			</array>
+		</dict>
+	</array>
+	<key>FlutterDeepLinkingEnabled</key>
+	<true/>
 </dict>
 </plist>
+

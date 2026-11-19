@@ -1,4 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Reminders and "new event from a host you follow" (plan §5).
+         Everything is scheduled on the phone: no push, no Firebase.
+         POST_NOTIFICATIONS is asked for at the first Save or Follow,
+         not on launch. RECEIVE_BOOT_COMPLETED lets reminders survive a
+         restart. There is deliberately no SCHEDULE_EXACT_ALARM: the
+         reminders are inexact, which needs no such permission. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="Event Tree"
         android:name="${applicationName}"
@@ -20,11 +29,49 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+            <!-- Hands incoming links to go_router instead of the engine's
+                 default, which ignores them. -->
+            <meta-data
+              android:name="flutter_deeplinking_enabled"
+              android:value="true"
+              />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Deep links. go_router reads the path, so eventtree:///gdg/devfest
+                 and https://<host>/gdg/devfest both land on the same screen as
+                 the web URL. The custom scheme matches the Expo app's; note
+                 the third slash, which keeps the host part empty so the
+                 whole path reaches go_router. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="eventtree"/>
+            </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="${appLinkHost}"/>
+            </intent-filter>
         </activity>
+        <!-- Re-schedules saved events' reminders after a restart or an
+             app update (flutter_local_notifications). -->
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
+            android:exported="false"/>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

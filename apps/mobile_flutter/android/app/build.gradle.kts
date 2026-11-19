@@ -27,6 +27,15 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // The https host whose /:username and /:username/:slug links open
+        // in the app (Android App Links). Override per build with
+        // `-PappLinkHost=event-tree.example.org`. Verification also needs
+        // /.well-known/assetlinks.json served by that host; until it is,
+        // the links simply keep opening in the browser.
+        manifestPlaceholders["appLinkHost"] =
+            (project.findProperty("appLinkHost") as String?)
+                ?: "event-tree.onrender.com"
     }
 
     buildTypes {

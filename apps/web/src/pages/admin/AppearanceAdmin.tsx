@@ -18,6 +18,7 @@ import { CoverArt, Icon } from "../../components/ui";
 import { SocialIcon } from "../../components/tree/SocialIcon";
 import { headerTint } from "../../lib/dates";
 import { posthog } from "../../lib/posthog";
+import { ANALYTICS_EVENTS } from "../../lib/analyticsEvents";
 
 const PLATFORMS: { id: SocialPlatform; label: string }[] = [
   { id: "instagram", label: "Instagram" },
@@ -85,7 +86,7 @@ export function AppearanceAdmin() {
         appearance: rest.themeId === "custom" ? { ...rest, colors } : rest,
       };
       const updated = await api.updateMyProfile(input);
-      posthog.capture("profile_updated", { theme_id: updated.appearance.themeId, social_link_count: updated.socials.length });
+      posthog.capture(ANALYTICS_EVENTS.profileUpdated, { theme_id: updated.appearance.themeId, social_link_count: updated.socials.length });
       profile.set(updated);
       setDraft(draftOf(updated));
       setStatus("Saved. Your page is updated.");
