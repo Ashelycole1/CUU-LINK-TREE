@@ -5,6 +5,7 @@ import { IMAGE_ACCEPT, IMAGE_SIZES, compressImage, imageProblem } from "../../li
 import { useDialog } from "../../lib/useDialog";
 import { InlineError } from "../ui/Input";
 import { Icon } from "../ui/Icon";
+import { posthog } from "../../lib/posthog";
 
 interface Props {
   event: EventDTO;
@@ -34,6 +35,7 @@ export function ImageGallery({ event, onUpdated }: Props) {
     try {
       const image = await compressImage(file, IMAGE_SIZES.photo);
       onUpdated(await api.uploadEventPhoto(event.id, image, image.type || file.type, caption));
+      posthog.capture("photo_uploaded");
       setFile(null);
       setCaption("");
       if (picker.current) picker.current.value = "";

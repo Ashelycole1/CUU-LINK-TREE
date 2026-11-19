@@ -9,6 +9,8 @@ import { Icon } from "../../components/ui/Icon";
 import { useDialog } from "../../lib/useDialog";
 import { useToast } from "../../components/ui";
 import { useAdmin } from "./AdminLayout";
+import { posthog } from "../../lib/posthog";
+import { posthogLogs } from "../../lib/posthogLogs";
 
 /** The main dashboard screen: add, edit, hide, reorder and delete events. */
 export function EventsAdmin() {
@@ -31,9 +33,13 @@ export function EventsAdmin() {
     refreshPreview();
   }
 
-  async function run(action: () => Promise<unknown>, message: string) {
+  async function run(action: () => Promise<unknown>, message: string, event?: "event_visibility_changed" | "event_deleted") {
     try {
       await action();
+      if (event) {
+        posthog.capture(event);
+        posthogLogs.info("Event management action completed", { operation: event });
+      }
       events.reload();
       done(message);
     } catch (err) {
@@ -43,6 +49,8 @@ export function EventsAdmin() {
 
   async function create(input: CreateEventInput) {
     await api.createEvent(input);
+    posthog.capture("event_created");
+    posthogLogs.info("Event management action completed", { operation: "event_created" });
     setEditing(null);
     events.reload();
     refreshPreview();
@@ -51,6 +59,8 @@ export function EventsAdmin() {
 
   async function update(event: EventDTO, input: CreateEventInput) {
     await api.updateEvent(event.id, input);
+    posthog.capture("event_updated");
+    posthogLogs.info("Event management action completed", { operation: "event_updated" });
     setEditing(null);
     events.reload();
     done("Changes saved");
@@ -161,7 +171,7 @@ export function EventsAdmin() {
                 isFirst={i === 0}
                 isLast={i === list.length - 1}
                 onMove={(d) => move(i, d)}
-                onToggle={() => run(() => api.updateEvent(event.id, { hidden: !event.hidden }), event.hidden ? "Shown on your page" : "Hidden from your page")}
+                onToggle={() => run(() => api.updateEvent(event.id, { hidden: !event.hidden }), event.hidden ? "Shown on your page" : "Hidden from your page", "event_visibility_changed")}
                 onEdit={() => setEditing(event.id)}
                 onDelete={() => setConfirmDelete(event)}
               />
@@ -177,7 +187,7 @@ export function EventsAdmin() {
           onConfirm={() => {
             const target = confirmDelete;
             setConfirmDelete(null);
-            void run(() => api.deleteEvent(target.id), "Event deleted");
+            void run(() => api.deleteEvent(target.id), "Event deleted", "event_deleted");
           }}
         />
       )}
