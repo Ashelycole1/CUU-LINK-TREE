@@ -1,0 +1,21 @@
+# Strict lints catch crashes early (plan §2 and §7, rule 8).
+# `flutter analyze` must report 0 issues before every commit.
+include: package:very_good_analysis/analysis_options.yaml
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+  errors:
+    # Silent-failure bugs fail the build instead of warning.
+    unawaited_futures: error
+    discarded_futures: error
+    use_build_context_synchronously: error
+    empty_catches: error
+    avoid_dynamic_calls: error
+    cancel_subscriptions: error
+    close_sinks: error

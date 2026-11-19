@@ -1,0 +1,68 @@
+# Flutter app (apps/mobile_flutter): format, analyze, test and a debug APK
+# on every push or pull request that touches it (plan §9 and §10, phase 1).
+name: Mobile (Flutter)
+
+on:
+  push:
+    paths:
+      - "apps/mobile_flutter/**"
+      - ".github/workflows/mobile-flutter.yml"
+  pull_request:
+    paths:
+      - "apps/mobile_flutter/**"
+      - ".github/workflows/mobile-flutter.yml"
+
+concurrency:
+  group: mobile-flutter-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/mobile_flutter
+    steps:
+      - uses: actions/checkout@v4
+
+      # The SDK version comes from .fvmrc, so CI builds with the same
+      # Flutter as everyone else.
+      - name: Read the pinned Flutter version
+        id: fvm
+        run: echo "flutter=$(jq -r .flutter .fvmrc)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ steps.fvm.outputs.flutter }}
+          cache: true
+
+      - name: Install packages
+        run: flutter pub get --enforce-lockfile
+
+      - name: Check formatting
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Analyze
+        run: flutter analyze --fatal-infos
+
+      - name: Test
+        run: flutter test --test-randomize-ordering-seed random
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: event-tree-debug-apk
+          path: apps/mobile_flutter/build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 7

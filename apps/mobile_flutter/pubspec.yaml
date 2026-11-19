@@ -1,0 +1,45 @@
+name: event_tree
+description: "Event Tree for Android and iOS."
+publish_to: 'none'
+version: 0.1.0+1
+
+# Flutter 3.47.8 stable, pinned in .fvmrc. Phase-1 packages only (plan §2).
+environment:
+  sdk: ^3.13.7
+  flutter: 3.47.8
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.5.0
+  # Part of the Flutter SDK (not pub.dev): path URLs on web, see bootstrap.dart.
+  flutter_web_plugins:
+    sdk: flutter
+  go_router: ^18.1.4
+  lucide_icons_flutter: ^4.0.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^11.0.0
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+
+  # Bundled, never downloaded at runtime (plan §1). Figtree is the app
+  # font, as on the web. Bricolage Grotesque and Fraunces (host pages)
+  # arrive with page_theme.dart in phase 2.
+  fonts:
+    - family: Figtree
+      fonts:
+        - asset: assets/fonts/Figtree-Regular.ttf
+        - asset: assets/fonts/Figtree-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Figtree-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Figtree-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Figtree-ExtraBold.ttf
+          weight: 800
